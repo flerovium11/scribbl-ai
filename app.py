@@ -1,6 +1,6 @@
 from time import sleep
 import pygame
-from components.colors import colors
+from components.colors import Colors
 import random
 import sys
 
@@ -29,12 +29,12 @@ gamemode_text2 = 'Sandkiste'
 credits_text = 'Ennio Binder 2024'
 
 # Create text surfaces
-title_surface = handwriting_font.render(title_text, True, colors.purple)
-title_bg_surface = handwriting_font.render(title_text, True, colors.pink)
-subtitle_surface = subtitle_font.render(subtitle_text, True, colors.purple)
-gamemode_text1_surface = text_font.render(gamemode_text1, True, colors.salmon)
-gamemode_text2_surface = text_font.render(gamemode_text2, True, colors.purple)
-credits_surface = credits_font.render(credits_text, True, colors.purple)
+title_surface = handwriting_font.render(title_text, True, Colors.purple)
+title_bg_surface = handwriting_font.render(title_text, True, Colors.pink)
+subtitle_surface = subtitle_font.render(subtitle_text, True, Colors.purple)
+gamemode_text1_surface = text_font.render(gamemode_text1, True, Colors.salmon)
+gamemode_text2_surface = text_font.render(gamemode_text2, True, Colors.purple)
+credits_surface = credits_font.render(credits_text, True, Colors.purple)
 
 # Create gamemode buttons with rounded edges
 button_radius = 10
@@ -100,7 +100,7 @@ while running:
             qbr = question_button_radius
     
     # Fill the screen with pink
-    screen.fill(colors.beige)
+    screen.fill(Colors.beige)
 
     # Draw the title with centered placement
     title_x = screen_width // 2 - title_surface.get_width() // 2
@@ -112,18 +112,18 @@ while running:
     screen.blit(subtitle_surface, (subtitle_x, 145))
 
     # Draw the gamemode buttons with rounded edges
-    pygame.draw.rect(screen, colors.purple, gamemode_button1, border_radius=button_radius)
-    pygame.draw.rect(screen, colors.salmon, gamemode_button2, border_radius=button_radius)
+    pygame.draw.rect(screen, Colors.purple, gamemode_button1, border_radius=button_radius)
+    pygame.draw.rect(screen, Colors.salmon, gamemode_button2, border_radius=button_radius)
 
     # Draw the gamemode text within their respective buttons
     screen.blit(gamemode_text1_surface, (gamemode_button1.x + gamemode_button1.width // 2 - gamemode_text1_surface.get_width() // 2, gamemode_button1.y + gamemode_button1.height // 2 - gamemode_text1_surface.get_height() // 2))
     screen.blit(gamemode_text2_surface, (gamemode_button2.x + gamemode_button2.width // 2 - gamemode_text2_surface.get_width() // 2, gamemode_button2.y + gamemode_button2.height // 2 - gamemode_text2_surface.get_height() // 2))
 
     # Draw the question mark button with rounded edges
-    pygame.draw.circle(screen, colors.pink, (question_button.center), qbr)
+    pygame.draw.circle(screen, Colors.pink, (question_button.center), qbr)
     question_mark_font = pygame.font.SysFont(None, 60)
     question_mark_text = '?'
-    question_mark_surface = question_mark_font.render(question_mark_text, True, colors.beige)
+    question_mark_surface = question_mark_font.render(question_mark_text, True, Colors.beige)
     screen.blit(question_mark_surface, (question_button.center[0] - question_mark_surface.get_width() // 2, question_button.center[1] - question_mark_surface.get_height() // 2))
 
     # Draw the credits with centered placement
@@ -132,7 +132,6 @@ while running:
 
     # Update the display
     pygame.display.flip()
-    pygame.display.update()
 
 # Quit Pygame
 pygame.quit()

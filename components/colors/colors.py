@@ -1,4 +1,4 @@
-class colors:
+class Colors:
     beige = (255, 214, 192)
     pink = (236, 54, 141)
     purple = (68, 3, 129)
