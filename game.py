@@ -1,11 +1,15 @@
 import pygame
 from time import sleep
 from typing import Optional
-from components.menu import Menu
+from pages.menu import Menu
+from pages.info import Info
+from pages.lobby import Lobby
+from pages.enter_name import EnterName
+from pages.sandbox import Sandbox
 
 class Game():
     def __init__(self:any, dim:tuple[float]=(650, 550))->None:
-        self.dim = dim
+        self.start_dim = self.dim = dim
         self.screen = pygame.display.set_mode(self.dim, pygame.RESIZABLE)
         self.running = True
         pygame.display.set_caption('ScribblAI')
@@ -14,6 +18,10 @@ class Game():
 
         self.pages = {
             'Menu': Menu,
+            'EnterName': EnterName,
+            'Lobby': Lobby,
+            'Sandbox': Sandbox,
+            'Info': Info,
         }
 
         self.fonts = {
@@ -38,7 +46,7 @@ class Game():
             raise ValueError(f'Page {page} does not exist')
 
         self.pagename = page
-        self.page = Menu(self, self.pagename)
+        self.page = self.pages[page](self, self.pagename)
         self.page.start()
 
     def create_btn(self:any, pos:tuple[float], dim:tuple[float], color:tuple, bdrad:float=0, text:str='', font:Optional[str]=None, fontsize:Optional[int]=None, fontcolor:Optional[tuple|str]=None)->pygame.rect:
