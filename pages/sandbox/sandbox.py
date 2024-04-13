@@ -1,11 +1,15 @@
 import pygame
 from utils.colors import Colors
+from utils.canvas import Canvas
 from pages.page import Page
 
 class Sandbox(Page):
     rotate_title = 0.1
     rotate_bg = -0.1
     rotate = pygame.USEREVENT + 1
+    
+    def on_init(self:any)->None:
+        self.canvas = Canvas(self.game, self)
     
     def on_start(self:any)->None:
         pygame.time.set_timer(self.rotate, 500)
@@ -24,7 +28,8 @@ class Sandbox(Page):
         self.game.draw(pygame.transform.rotate(title_bg, self.rotate_bg * min_ratio * 2), (title_x, title_padding + 4 * min_ratio))
         self.game.draw(pygame.transform.rotate(title, self.rotate_title * min_ratio * 2), (title_x, title_padding))
         self.btn = self.game.create_btn((title_padding - (self.btn_dim[0] - self.base_btn_dim[0])*0.5, title_padding - (self.btn_dim[1] - self.base_btn_dim[1])*0.5), self.btn_dim, Colors.purple, round(10 * min_ratio), 'Zurück', 'Arial', round(30 * min_ratio), Colors.salmon)
-        
+        canvas_y = 75 * min_ratio + 2 * title_padding
+        self.canvas.draw((title_padding, canvas_y), ((self.game.dim[0] - 2 * title_padding) / 3 * 2, self.game.dim[1] - canvas_y - title_padding), Colors.white)
 
     def event_check(self:any, event:pygame.event)->None:
         if event.type == self.rotate:
@@ -32,6 +37,7 @@ class Sandbox(Page):
             self.rotate_bg *= -1
 
         self.btn_dim = self.base_btn_dim
+        self.canvas.event_check(event)
 
         # Handle mouse clicks
         if self.btn.collidepoint(self.mouse_pos):

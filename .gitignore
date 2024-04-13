@@ -10,6 +10,9 @@
 *.userosscache
 *.sln.docstates
 
+*.npy
+model_image.*
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

@@ -5,6 +5,7 @@ class Page:
     def __init__(self:any, game:any, pagename:str)->None:
         self.game = game
         self.name = pagename
+        self.mouseswitch = False
         self.on_init()
     
     def start(self:any)->None:
@@ -15,7 +16,10 @@ class Page:
 
             for event in pygame.event.get():
                 self.mouse_pos = pygame.mouse.get_pos()
-                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+
+                if not self.mouseswitch:
+                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+                
                 self.game.event_check(event)
                 self.event_check(event)
             
