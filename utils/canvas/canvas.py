@@ -10,12 +10,17 @@ class Canvas:
         self.pencil_img = pygame.image.load('./assets/pencil.png').convert_alpha()
         self.eraser_img = pygame.image.load('./assets/eraser.png').convert_alpha()
         self.trash_img = pygame.image.load('./assets/trash.png').convert_alpha()
-        self.phover = self.ehover = self.thover = self.drawing = False
-        self.grid_width = 200
-        self.grid_height = 200
+        self.phover = self.ehover = self.thover = self.drawing = self.ai_predict = False
+        self.grid_width = 100
+        self.grid_height = 100
         self.grid = self.empty_grid(self.grid_width, self.grid_height)
-        self.draw_radius = 4
-        self.erase_radius = 8
+        self.draw_radius = 1
+        self.max_draw_radius = 10
+        self.min_draw_radius = 0
+        self.erase_radius = 3
+        self.max_erase_radius = 20
+        self.min_erase_radius = 1
+        self.scrolled_time = 0
     
     def empty_grid(self:any, w:int, h:int):
         return [[0.0 for _ in range(h)] for _ in range(w)]
@@ -70,6 +75,9 @@ class Canvas:
             img = self.pencil_img if self.mode == 'draw' else self.eraser_img
             self.game.draw(pygame.transform.smoothscale(img, tuple([val / 1.5 for val in pencil_size])), (self.page.mouse_pos[0], self.page.mouse_pos[1] - pencil_size[1] / 2 - 5))
 
+        if pygame.time.get_ticks() - self.scrolled_time <= 1000 and hasattr(self.page, 'mouse_pos'):
+            pygame.draw.circle(self.game.screen, Colors.pink, self.page.mouse_pos, (self.draw_radius if self.mode == 'draw' else self.erase_radius) * self.canvas.width / self.grid_width + 2, width=1)
+
     def normalize_pos(self:any, pos:tuple[float])->tuple[float]:
         pos_x = math.floor((pos[0] - self.canvas.x) / self.canvas.width * self.grid_width)
         pos_y = math.floor((pos[1] - self.canvas.y) / self.canvas.height * self.grid_height)
@@ -80,6 +88,15 @@ class Canvas:
 
     def event_check(self:any, event:pygame.event)->None: 
         self.phover = self.ehover = self.thover = False
+
+        if event.type == pygame.MOUSEWHEEL:
+            if self.mode == 'draw':
+                self.draw_radius = min(self.max_draw_radius, max(self.min_draw_radius, self.draw_radius + event.y))
+            
+            if self.mode == 'erase':
+                self.erase_radius = min(self.max_erase_radius, max(self.min_erase_radius, self.erase_radius + event.y))
+            
+            self.scrolled_time = pygame.time.get_ticks()
 
         if self.canvas.collidepoint(self.page.mouse_pos):
             self.page.mouseswitch = True
@@ -93,8 +110,9 @@ class Canvas:
                     self.draw_circle((normalized[0], normalized[1]), radius, self.mode != 'draw', 0.1)
                     
             elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1:
+                if event.button == 1 and self.drawing:
                     self.drawing = False
+                    self.ai_predict = True
             elif event.type == pygame.MOUSEMOTION:
                 if self.drawing:
                     normalized = self.normalize_pos(event.pos)
@@ -110,6 +128,7 @@ class Canvas:
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.mode = 'draw'
+                self.scrolled_time = pygame.time.get_ticks()
 
         if self.eraser_rect.collidepoint(self.page.mouse_pos):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
@@ -117,6 +136,7 @@ class Canvas:
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.mode = 'erase'
+                self.scrolled_time = pygame.time.get_ticks()
 
         if self.trash_rect.collidepoint(self.page.mouse_pos):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
@@ -124,6 +144,7 @@ class Canvas:
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.grid = self.empty_grid(self.grid_width, self.grid_height)
+                self.ai_predict = True
         
     def draw_trace(self:any)->None:
         for x in range(self.grid_width):

@@ -1,7 +1,13 @@
+import math
 import pygame
 from utils.colors import Colors
 from utils.canvas import Canvas
 from pages.page import Page
+from utils.ai import AI
+import numpy as np
+import matplotlib.pyplot as plt
+from utils.image import image
+from skimage.transform import resize
 
 class Sandbox(Page):
     rotate_title = 0.1
@@ -10,6 +16,7 @@ class Sandbox(Page):
     
     def on_init(self:any)->None:
         self.canvas = Canvas(self.game, self)
+        self.ai = AI()
     
     def on_start(self:any)->None:
         pygame.time.set_timer(self.rotate, 500)
@@ -29,7 +36,41 @@ class Sandbox(Page):
         self.game.draw(pygame.transform.rotate(title, self.rotate_title * min_ratio * 2), (title_x, title_padding))
         self.btn = self.game.create_btn((title_padding - (self.btn_dim[0] - self.base_btn_dim[0])*0.5, title_padding - (self.btn_dim[1] - self.base_btn_dim[1])*0.5), self.btn_dim, Colors.purple, round(10 * min_ratio), 'Zurück', 'Arial', round(30 * min_ratio), Colors.salmon)
         canvas_y = 75 * min_ratio + 2 * title_padding
-        self.canvas.draw((title_padding, canvas_y), ((self.game.dim[0] - 2 * title_padding) / 3 * 2, self.game.dim[1] - canvas_y - title_padding), Colors.white)
+        canvas_height = self.game.dim[1] - canvas_y - title_padding
+        canvas_width = (self.game.dim[0] - 2 * title_padding) / 3 * 2
+        canvas_size = min(canvas_width, canvas_height)
+        self.canvas.draw((title_padding, canvas_y), (canvas_size, canvas_size), Colors.white)
+
+        if hasattr(self, 'result'):
+            y = canvas_y
+            ys = []
+            hs = []
+            max_width = 0
+            display_count = 5
+            total = sum([guess['certainty'] for guess in self.result])
+            relative_certainties = []
+
+            for i in range(display_count):
+                guess = self.result[i]
+                percentage = round(guess['certainty'] * 100, 1)
+                relative_certainties.append(guess['certainty'] / total)
+                text = self.game.text_surface(f'{guess["category"]} ({percentage}%)', 'Arial', 20, Colors.black)
+                self.game.draw(text, (canvas_size + 2 * title_padding, y))
+                height = text.get_height()
+                hs.append(height)
+                ys.append(y)
+                y += height + title_padding
+                max_width = max(text.get_width(), max_width)
+
+            width = self.game.dim[0] - (canvas_size + 2 * title_padding) - max_width - 2 * title_padding
+            x = self.game.dim[0] - width
+
+            for i, y in enumerate(ys):
+                bar = pygame.Rect(x, y, width * relative_certainties[i], hs[i])
+                bdrad = 2
+                bar.inflate(-2 * bdrad, -2 * bdrad)
+                pygame.draw.rect(self.game.screen, Colors.pink, bar, border_radius=bdrad)
+
 
     def event_check(self:any, event:pygame.event)->None:
         if event.type == self.rotate:
@@ -46,3 +87,14 @@ class Sandbox(Page):
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.game.goto_page('Menu')
+
+        if self.canvas.ai_predict:
+            self.canvas.ai_predict = False
+            img_array = resize(np.flip(np.rot90(np.array(self.canvas.grid), k=-1), axis=1), (28, 28), anti_aliasing=True)
+            img_array = image.motive_crop(img_array, 0, 0)
+            img_array = image.squarify(img_array, 0)
+
+            # imgplot = plt.imshow(img_array, cmap='gray')
+            # plt.show()
+
+            self.result = self.ai.predictImage(img_array)       
