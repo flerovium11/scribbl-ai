@@ -58,7 +58,7 @@ img_rows, img_cols = 28, 28
 data_path = "data/"
 model_path = "models/"
 model_name = "test"
-load_model_from = "models/model_test.keras"
+load_model_from = "models/model_t2_cat50_lr1_88-78.keras"
 
 train_data = []
 val_data = []

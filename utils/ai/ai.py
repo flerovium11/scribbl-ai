@@ -9,6 +9,7 @@ import os
 
 class AI:
     def __init__(self:any, model_path:str='models/model_t1_cat50.keras')->None: 
+        #model_path = 'models/model_t2_cat50_lr1_88-78.keras'
         __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
         self.model_path = model_path
         loaded_model = load_model(os.path.join(__location__, self.model_path))
