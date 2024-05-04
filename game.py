@@ -10,10 +10,12 @@ from pages.sandbox import Sandbox
 class Game():
     def __init__(self:any, dim:tuple[float]=(650, 550))->None:
         self.start_dim = self.dim = dim
-        self.screen = pygame.display.set_mode(self.dim, pygame.RESIZABLE)
+        pygame.event.set_allowed([pygame.QUIT, pygame.MOUSEMOTION, pygame.MOUSEWHEEL, pygame.MOUSEBUTTONDOWN, pygame.VIDEORESIZE, pygame.MOUSEBUTTONUP])
+        flags = pygame.DOUBLEBUF | pygame.RESIZABLE
+        self.screen = pygame.display.set_mode(self.dim, flags)
         self.running = True
         pygame.display.set_caption('ScribblAI')
-        logo = pygame.image.load('./assets/logo.png')
+        logo = pygame.image.load('./assets/logo.png').convert_alpha()
         pygame.display.set_icon(logo)
 
         self.pages = {
@@ -37,6 +39,7 @@ class Game():
         
         if event.type == pygame.VIDEORESIZE:
             self.dim = (event.w, event.h)
+            self.page.trigger_update()
 
     def start(self:any)->None:
         self.goto_page('Menu')

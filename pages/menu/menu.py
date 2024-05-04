@@ -1,5 +1,6 @@
 import pygame
 from utils.colors import Colors
+from utils.eventbool import EventBool
 from pages.page import Page
 
 class Menu(Page):
@@ -10,6 +11,12 @@ class Menu(Page):
     rotate_bg = -0.1
     rotate = pygame.USEREVENT + 1
     base_modebtn_dim = modebtn_dim = modebtn1_dim = modebtn2_dim = (220, 140)
+    
+    def on_init(self:any)->None:
+        pygame.event.set_allowed([self.rotate])
+        self.modebtn1_hover = EventBool(self.trigger_update)
+        self.modebtn2_hover = EventBool(self.trigger_update)
+        self.qb_hover = EventBool(self.trigger_update)
     
     def on_start(self:any)->None:
         pygame.time.set_timer(self.rotate, 500)
@@ -52,35 +59,43 @@ class Menu(Page):
         credits_x = self.game.dim[0] // 2 - credits.get_width() // 2
         self.game.draw(credits, (credits_x, self.game.dim[1] - credits.get_height() - 10))
 
+    def iteration(self:any)->None:
+        if self.modebtn1.collidepoint(self.mouse_pos):
+            if self.modebtn1_hover.switch_true():
+                self.modebtn1_dim = tuple([val * 1.05 for val in self.modebtn_dim])
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+        elif self.modebtn1_hover.switch_false():
+            self.modebtn1_dim = self.modebtn_dim
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+
+        if self.modebtn2.collidepoint(self.mouse_pos):
+            if self.modebtn2_hover.switch_true():
+                self.modebtn2_dim = tuple([val * 1.05 for val in self.modebtn_dim])
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+        elif self.modebtn2_hover.switch_false():
+            self.modebtn2_dim = self.modebtn_dim
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+
+        if self.qbtn.collidepoint(self.mouse_pos):
+            if self.qb_hover.switch_true():
+                self.qbr = self.base_qbr * 1.1
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+        elif self.qb_hover.switch_false():
+            self.qbr = self.base_qbr
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+
+
     def event_check(self:any, event:pygame.event)->None:
         if event.type == self.rotate:
             self.rotate_title *= -1
             self.rotate_bg *= -1
+            self.trigger_update()
+        
+        if self.qb_hover.state and event.type == pygame.MOUSEBUTTONDOWN:
+            self.game.goto_page('Info')
+        
+        if self.modebtn2_hover.state and event.type == pygame.MOUSEBUTTONDOWN:
+            self.game.goto_page('Sandbox')
 
-        # Handle mouse clicks
-        if self.modebtn1.collidepoint(self.mouse_pos):
-            self.modebtn1_dim = tuple([val * 1.05 for val in self.modebtn_dim])
-            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                self.game.goto_page('Lobby')
-        else:
-            self.modebtn1_dim = self.modebtn_dim
-
-        if self.modebtn2.collidepoint(self.mouse_pos):
-            self.modebtn2_dim = tuple([val * 1.05 for val in self.modebtn_dim])
-            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
-            
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                self.game.goto_page('Sandbox')
-        else:
-            self.modebtn2_dim = self.modebtn_dim
-
-        if self.qbtn.collidepoint(self.mouse_pos):
-            self.qbr = self.base_qbr * 1.1
-            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
-            
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                self.game.goto_page('Info')
-        else:
-            self.qbr = self.base_qbr
+        if self.modebtn1_hover.state and event.type == pygame.MOUSEBUTTONDOWN:
+            self.game.goto_page('Lobby')

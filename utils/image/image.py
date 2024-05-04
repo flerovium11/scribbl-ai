@@ -1,4 +1,5 @@
 import numpy as np
+from skimage.transform import resize
 import math
 
 def squarify(img_array:np.array, val:float=1)->np.array:
@@ -22,4 +23,10 @@ def motive_crop(img_array:np.array, padding:int, empty_val:float=1)->np.array:
     # Pad the cropped array
     img_array = np.pad(img_array, ((padding, padding), (padding, padding)), mode='constant', constant_values=empty_val)
 
+    return img_array
+
+def format_for_ai(img_array:np.array)->np.array:
+    img_array = resize(np.flip(np.rot90(np.array(img_array), k=-1), axis=1), (28, 28), anti_aliasing=True)
+    img_array = motive_crop(img_array, 0, 0)
+    img_array = squarify(img_array, 0)
     return img_array

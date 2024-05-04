@@ -4,19 +4,19 @@ from utils.colors import Colors
 from utils.canvas import Canvas
 from pages.page import Page
 from utils.ai import AI
+from utils.input import Input
 import numpy as np
 import matplotlib.pyplot as plt
 from utils.image import image
-from skimage.transform import resize
 
 class Sandbox(Page):
-    rotate_title = 0.1
-    rotate_bg = -0.1
     rotate = pygame.USEREVENT + 1
     
     def on_init(self:any)->None:
         self.canvas = Canvas(self.game, self)
         self.ai = AI()
+        pygame.event.set_allowed([self.rotate])
+        self.text_input = Input(self.game, self)
     
     def on_start(self:any)->None:
         pygame.time.set_timer(self.rotate, 500)
@@ -40,6 +40,7 @@ class Sandbox(Page):
         canvas_width = (self.game.dim[0] - 2 * title_padding) / 3 * 2
         canvas_size = min(canvas_width, canvas_height)
         self.canvas.draw((title_padding, canvas_y), (canvas_size, canvas_size), Colors.white)
+        self.text_input.draw((title_padding + canvas_size * 0.5, canvas_y + canvas_size * 0.875 + title_padding / 2), canvas_size * 0.5 - title_padding, (title_padding / 2, title_padding / 2), 10)
 
         if hasattr(self, 'result'):
             y = canvas_y
@@ -47,54 +48,66 @@ class Sandbox(Page):
             hs = []
             max_width = 0
             display_count = 5
-            total = sum([guess['certainty'] for guess in self.result])
+            total = sum([guess['certainty'] for guess in self.result[:display_count]])
             relative_certainties = []
 
             for i in range(display_count):
                 guess = self.result[i]
                 percentage = round(guess['certainty'] * 100, 1)
                 relative_certainties.append(guess['certainty'] / total)
-                text = self.game.text_surface(f'{guess["category"]} ({percentage}%)', 'Arial', 20, Colors.black)
+                string = f'{guess["category"]} ({percentage}%)'
+                font_size = 20
+                text = self.game.text_surface(string, 'Arial', font_size, Colors.black)
                 self.game.draw(text, (canvas_size + 2 * title_padding, y))
-                height = text.get_height()
+                height = font_size * 1.5
                 hs.append(height)
                 ys.append(y)
                 y += height + title_padding
-                max_width = max(text.get_width(), max_width)
+                max_width = max(len(string) * font_size * 0.35, max_width)
 
             width = self.game.dim[0] - (canvas_size + 2 * title_padding) - max_width - 2 * title_padding
             x = self.game.dim[0] - width
 
             for i, y in enumerate(ys):
                 bar = pygame.Rect(x, y, width * relative_certainties[i], hs[i])
-                bdrad = 2
-                bar.inflate(-2 * bdrad, -2 * bdrad)
-                pygame.draw.rect(self.game.screen, Colors.pink, bar, border_radius=bdrad)
+                pygame.draw.rect(self.game.screen, Colors.pink, bar)
 
+    def iteration(self:any)->None:
+        # Handle mouse clicks
+        if self.btn.collidepoint(self.mouse_pos):
+            if self.back_button_hover.switch_true():
+                self.btn_dim = tuple([val * 1.05 for val in self.base_btn_dim])
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+        elif self.back_button_hover.switch_false():
+            self.btn_dim = self.base_btn_dim
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+
+        if self.canvas.ai_predict:
+            self.canvas.ai_predict = False
+            img_array = image.format_for_ai(self.canvas.grid)
+            # imgplot = plt.imshow(img_array, cmap='gray')
+            # plt.show()
+
+            self.result = self.ai.predictImage(img_array)
+        
+        self.canvas.iteration()
 
     def event_check(self:any, event:pygame.event)->None:
         if event.type == self.rotate:
             self.rotate_title *= -1
             self.rotate_bg *= -1
+            self.trigger_update()
 
-        self.btn_dim = self.base_btn_dim
-        self.canvas.event_check(event)
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN and len(self.text_input.manager.value.strip()):
+            self.add_training_example()
+        
+        if self.back_button_hover.state and event.type == pygame.MOUSEBUTTONDOWN:
+            self.game.goto_page('Menu')
 
-        # Handle mouse clicks
-        if self.btn.collidepoint(self.mouse_pos):
-            self.btn_dim = tuple([val * 1.05 for val in self.base_btn_dim])
-            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                self.game.goto_page('Menu')
-
-        if self.canvas.ai_predict:
-            self.canvas.ai_predict = False
-            img_array = resize(np.flip(np.rot90(np.array(self.canvas.grid), k=-1), axis=1), (28, 28), anti_aliasing=True)
-            img_array = image.motive_crop(img_array, 0, 0)
-            img_array = image.squarify(img_array, 0)
-
-            # imgplot = plt.imshow(img_array, cmap='gray')
-            # plt.show()
-
-            self.result = self.ai.predictImage(img_array)       
+        self.canvas.event_check(event)    
+        self.text_input.event_check(event)  
+    
+    def add_training_example(self:any)->None:
+        img = image.format_for_ai(self.canvas.grid)
+        imgplot = plt.imshow(img, cmap='gray')
+        plt.show()

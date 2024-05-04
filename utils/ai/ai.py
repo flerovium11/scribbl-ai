@@ -1,6 +1,6 @@
 import numpy as np
 import keras.models
-from keras.models import model_from_json
+from keras.models import load_model
 import imageio
 import matplotlib.pyplot as plt
 from skimage.transform import resize
@@ -8,23 +8,17 @@ import sys
 import os
 
 class AI:
-    def __init__(self:any)->None: 
+    def __init__(self:any, model_path:str='models/model_t1_cat50.keras')->None: 
         __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-        json_file = open(os.path.join(__location__, 'model_image.json'), 'r')
-        loaded_model_json = json_file.read()
-        json_file.close()
-        loaded_model = model_from_json(loaded_model_json)
-        
-        #load weights into new model
-        loaded_model.load_weights(os.path.join(__location__, 'model_image.h5'))
+        self.model_path = model_path
+        loaded_model = load_model(os.path.join(__location__, self.model_path))
         print("Loaded Model from disk")
 
         loaded_model.compile(loss='categorical_crossentropy', optimizer=keras.optimizers.Adadelta(), metrics=['accuracy'])
         self.model = loaded_model
 
-        mypath = __location__ + "/data/"
-        txt_name_list = [filename for filename in os.listdir(mypath) if filename.endswith('.npy')]
-        self.categories = [val.replace('full_numpy_bitmap_', '').replace('.npy', '') for val in txt_name_list]
+        categories_file = open(__location__ + '/categories_german.txt', encoding='utf-8')
+        self.categories = [word.replace('\n', '') for word in categories_file.readlines()]
 
     def convertImagePath(self:any, img_path:str)->np.array:
         img = imageio.imread(img_path, mode='F') # read the image in grayscale

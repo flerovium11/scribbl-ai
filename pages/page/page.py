@@ -1,29 +1,36 @@
 import pygame
 from utils.colors import Colors
+from utils.eventbool import EventBool
 
 class Page:
+    # not for menu page
+    rotate_title = 0.2
+    rotate_bg = -0.2
+
     def __init__(self:any, game:any, pagename:str)->None:
         self.game = game
         self.name = pagename
-        self.mouseswitch = False
+        self.update = False
+        self.back_button_hover = EventBool(self.trigger_update)
         self.on_init()
     
     def start(self:any)->None:
         self.on_start()
+        self.draw()
+        pygame.display.flip()
 
         while self.game.running and self.game.pagename == self.name:
-            self.draw()
+            self.mouse_pos = pygame.mouse.get_pos()
+            self.iteration()
 
             for event in pygame.event.get():
-                self.mouse_pos = pygame.mouse.get_pos()
-
-                if not self.mouseswitch:
-                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
-                
                 self.game.event_check(event)
                 self.event_check(event)
-            
-            pygame.display.flip()
+
+            if self.update:
+                self.draw()
+                pygame.display.flip()
+                self.update = False  
 
     def draw(self:any)->None:
         if not hasattr(self, 'btn_dim'): self.btn_dim = (200, 100)
@@ -36,15 +43,21 @@ class Page:
         pass
 
     def event_check(self:any, event:pygame.event)->None:
+        if self.back_button_hover.state and event.type == pygame.MOUSEBUTTONDOWN:
+            self.game.goto_page('Menu')
+    
+    def trigger_update(self:any)->None:
+        self.update = True
+    
+    def iteration(self:any)->None:
         self.btn_dim = (200, 100)
 
-        # Handle mouse clicks
         if self.btn.collidepoint(self.mouse_pos):
-            self.btn_dim = tuple([val * 1.05 for val in self.btn_dim])
-            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                self.game.goto_page('Menu')
+            if self.back_button_hover.switch_true():
+                self.btn_dim = tuple([val * 1.05 for val in self.btn_dim])
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+        elif self.back_button_hover.switch_false():
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
 
     def on_start(self:any)->None:
         pass
