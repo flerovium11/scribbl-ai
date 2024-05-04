@@ -31,7 +31,7 @@ class Network:
     
     def start_client(self:any)->None:
         self.id = self.connect()
-        print(self.id)
+        print(self.id) 
     
     def connect(self:any)->None:
         try:
@@ -61,7 +61,6 @@ class Network:
             print('Connected to:', addr)
             client = threading.Thread(target=self.client, args=[conn])
             client.start()
-
     
     def client(self:any, conn)->None:
         conn.send(str.encode("Hello from the other siiiihiide"))

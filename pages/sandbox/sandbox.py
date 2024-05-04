@@ -108,6 +108,6 @@ class Sandbox(Page):
         self.text_input.event_check(event)  
     
     def add_training_example(self:any)->None:
-        img = image.format_for_ai(self.canvas.grid)
+        img = image.format_for_ai(self.canvas.grid)        
         imgplot = plt.imshow(img, cmap='gray')
         plt.show()
