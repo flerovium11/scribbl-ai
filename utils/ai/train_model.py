@@ -49,16 +49,16 @@ def update_plots():
     plt.legend()
 
 # Parameters
-batch_size = 300
-category_slice_length = 8000
+batch_size = 300 # 300
+category_slice_length = 10000 # 8000
 category_count = 50
 validation_data_proportion = 0.1
-epoch_count = 1
+epoch_count = 100 # 1
 img_rows, img_cols = 28, 28
 data_path = "data/"
 model_path = "models/"
-model_name = "test"
-load_model_from = "models/model_t2_cat50_lr1_88-78.keras"
+model_name = "t4_cat50"
+load_model_from = "models/model_t3_cat50_lr05.keras"
 
 train_data = []
 val_data = []
@@ -71,7 +71,9 @@ categories = categories_file.readlines()[:category_count]
 data_files = os.listdir(data_path)[:category_count]
 
 for i, filename in enumerate(data_files):
-    images = np.load(os.path.join(data_path, filename))[:category_slice_length]
+    shuffled = np.load(os.path.join(data_path, filename))
+    np.random.shuffle(shuffled)
+    images = shuffled[:category_slice_length]
     split_index = round(len(images) * validation_data_proportion)
     val_images, train_images = images[:split_index], images[split_index:]
     train_labels.extend([i] * len(train_images))
@@ -115,7 +117,7 @@ else:
 print("Model built! Compiling model...")
 
 model.compile(loss=keras.losses.categorical_crossentropy,
-                optimizer=keras.optimizers.Adadelta(),
+                optimizer=keras.optimizers.Adadelta(learning_rate=0.5),
                 metrics=["accuracy"])
 
 # Train model

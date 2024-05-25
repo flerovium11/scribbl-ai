@@ -1,5 +1,6 @@
 import numpy as np
 from skimage.transform import resize
+from skimage import exposure
 import math
 
 def squarify(img_array:np.array, val:float=1)->np.array:
@@ -29,4 +30,5 @@ def format_for_ai(img_array:np.array)->np.array:
     img_array = resize(np.flip(np.rot90(np.array(img_array), k=-1), axis=1), (28, 28), anti_aliasing=True)
     img_array = motive_crop(img_array, 0, 0)
     img_array = squarify(img_array, 0)
+    # img_array = exposure.rescale_intensity(img_array, in_range=(0, 1))
     return img_array
