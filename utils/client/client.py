@@ -14,11 +14,11 @@ class Client:
     def __init__(self:any, host:str='', port:int=5555, log:any=None, name:str='Unknown', on_receive:callable=lambda: None)->None:
         try:
             load_dotenv(env_path)
-            self.max_wait_time = int(os.getenv('CLIENT_MAX_WAIT_TIME'))
+            self.max_wait_time = float(os.getenv('CLIENT_MAX_WAIT_TIME'))
             self.max_packets_lost = int(os.getenv('CLIENT_MAX_PACKETS_LOST'))
-        except KeyError as error:
+        except (KeyError, TypeError, ValueError) as error:
             if log is not None:
-                log.exception(F'Environment variables missing in {env_path}')
+                log.exception(F'Environment variables wrong or missing in {env_path}')
             
             exit()
         
@@ -154,13 +154,22 @@ class Client:
             else:
                 self.log.info(f'Disconnected client from server at {self.addr_str}')
         
+        leave_message = {'disconnect': True}
+
+        try:
+            # wait for server to send packet and answer with leave_message
+            self.s.recv(4096)
+            self.s.send(json.dumps(leave_message).encode())
+        except KeyboardInterrupt as error:
+            pass
+            
         self.online = self.active = False
         self.s.close()
         exit()
 
 if __name__ == '__main__':
     logger = create_logger('client.log')
-    client_count = 10
+    client_count = 6
     clients = []
 
     for i in range(client_count):
@@ -168,7 +177,7 @@ if __name__ == '__main__':
         client_thread = threading.Thread(target=client.start, args=())
         client_thread.start()
         clients.append(client)
-        sleep(0.1)
+        sleep(0.5)
     
     while True:
         try:

@@ -21,18 +21,18 @@ class Lobby:
             load_dotenv(env_path)
             self.min_players = int(os.getenv('LOBBY_MIN_PLAYERS'))
             self.max_players = int(os.getenv('LOBBY_MAX_PLAYERS'))
-            self.choose_word_time = int(os.getenv('LOBBY_CHOOSE_WORD_TIME'))
+            self.choose_word_time = float(os.getenv('LOBBY_CHOOSE_WORD_TIME'))
             self.choose_word_count = int(os.getenv('LOBBY_CHOOSE_WORD_COUNT'))
-            self.lobby_wait_time = int(os.getenv('LOBBY_WAIT_TIME'))
-            self.min_lobby_wait_time = int(os.getenv('LOBBY_MIN_WAIT_TIME'))
-            self.draw_time = int(os.getenv('LOBBY_DRAW_TIME'))
+            self.lobby_wait_time = float(os.getenv('LOBBY_WAIT_TIME'))
+            self.min_lobby_wait_time = float(os.getenv('LOBBY_MIN_WAIT_TIME'))
+            self.draw_time = float(os.getenv('LOBBY_DRAW_TIME'))
             self.model_path = os.getenv('LOBBY_MODEL_PATH')
 
             if self.model_path is None:
                 raise KeyError()
-        except (KeyError, TypeError) as error:
+        except (KeyError, TypeError, ValueError) as error:
             if log is not None:
-                log.exception(F'Environment variables missing in {env_path}')
+                log.exception(F'Environment variables wrong or missing in {env_path}')
             
             exit()
 
@@ -123,8 +123,7 @@ class Lobby:
         while self.state is LobbyState.CHOOSE_WORD:
             try:
                 if self.countdown == 0:
-                    shuffle(self.words)
-                    self.word = self.words[0]
+                    self.word = self.words[randint(0, len(self.words) - 1)]
 
                 if len(self.players) == 0:
                     self.state = LobbyState.STOPPED
@@ -173,10 +172,10 @@ class Player:
         try:
             load_dotenv(env_path)
             self.max_packets_lost = int(os.getenv('PLAYER_MAX_PACKETS_LOST'))
-            self.max_wait_time = int(os.getenv('PLAYER_MAX_WAIT_TIME'))
-        except (KeyError, TypeError) as error:
+            self.max_wait_time = float(os.getenv('PLAYER_MAX_WAIT_TIME'))
+        except (KeyError, TypeError, ValueError) as error:
             if log is not None:
-                log.exception(F'Environment variables missing in {env_path}')
+                log.exception(F'Environment variables wrong or missing in {env_path}')
             
             exit()
         
@@ -213,8 +212,8 @@ class Player:
         except (ConnectionError, TimeoutError) as error:
             # the rest of exceptions are unexpected
             if self.log is not None:
-                self.log.exception('Connection to client failed')
-
+                self.log.exception('Connection to client failed.!')
+            
             self.lose_packet()
         except json.JSONDecodeError as error:
             if self.log is not None:
@@ -228,15 +227,21 @@ class Player:
         self.packets_lost += 1
         self.online = False
 
+        if self.log is not None:
+            if hasattr(self, 'id'):
+                self.log.warning(f'Lost package from player {self.id} in lobby {self.lobby.id} at {self.addr_str} ({self.packets_lost}/{self.max_packets_lost})')
+            else:
+                self.log.warning(f'Lost package from player at {self.addr_str} ({self.packets_lost}/{self.max_packets_lost})')
+
         if self.packets_lost >= self.max_packets_lost:
             self.active = False
 
             if hasattr(self, 'id'):
                 if self.log is not None:
-                    self.log.info(f'Player {self.id} in lobby {self.lobby.id} at {self.addr_str} disconnected due to max package loss ({self.max_packets_lost})')
+                    self.log.warning(f'Player {self.id} in lobby {self.lobby.id} at {self.addr_str} disconnected due to max package loss ({self.max_packets_lost})')
             else:
                 if self.log is not None:
-                    self.log.info(f'Player at {self.addr_str} disconnected due to max package loss ({self.max_packets_lost})')
+                    self.log.warning(f'Player at {self.addr_str} disconnected due to max package loss ({self.max_packets_lost})')
         
     def main(self:any)->None:
         self.log.info(f'Connected to player at {self.addr_str}')
@@ -281,7 +286,12 @@ class Player:
 
             if reply is not None:
                 try:
-                    
+                    if 'disconnect' in reply:
+                        if self.log is not None:
+                            self.log.info(f'Received disconnect from player at {self.addr_str}')
+                        
+                        self.disconnect()
+
                     if hasattr(self, 'id'):
                         if self.log is not None:
                             self.log.info(f'Received {str(reply)} from player {self.id} in lobby {self.lobby.id} at {self.addr_str}')
@@ -303,12 +313,6 @@ class Player:
                         self.log.exception('Received data missing key')
                     
                     self.lose_packet()
-            else:
-                if self.log is not None:
-                    if hasattr(self, 'id'):
-                        self.log.warning(f'Lost package from player {self.id} in lobby {self.lobby.id} at {self.addr_str} ({self.packets_lost}/{self.max_packets_lost})')
-                    else:
-                        self.log.warning(f'Lost package from player at {self.addr_str} ({self.packets_lost}/{self.max_packets_lost})')
 
             sleep(0.5)
         
