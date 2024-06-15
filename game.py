@@ -1,4 +1,5 @@
 import pygame
+import os
 from time import sleep
 from typing import Optional
 from pages.menu import Menu

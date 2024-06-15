@@ -1,15 +1,21 @@
 import numpy as np
+import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import keras.models
 from keras.models import load_model
 import imageio
 import matplotlib.pyplot as plt
 from skimage.transform import resize
 import sys
+sys.path.append('../..')
+from external.definitions import EXTERNAL_DIR
 import os
+
+categories_file = open(os.path.join(EXTERNAL_DIR, 'categories_german.txt'), encoding='utf-8')
+german_categories = [word.replace('\n', '') for word in categories_file.readlines()]
 
 class AI:
     def __init__(self:any, model_path:str='models/model_t1_cat50.keras')->None: 
-        model_path = 'models/model_t2_cat50_lr1_79.keras'
         __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
         self.model_path = model_path
         loaded_model = load_model(os.path.join(__location__, self.model_path))
@@ -17,9 +23,7 @@ class AI:
 
         loaded_model.compile(loss='categorical_crossentropy', optimizer=keras.optimizers.Adadelta(), metrics=['accuracy'])
         self.model = loaded_model
-
-        categories_file = open(__location__ + '/categories_german.txt', encoding='utf-8')
-        self.categories = [word.replace('\n', '') for word in categories_file.readlines()]
+        self.categories = german_categories
 
     def convertImagePath(self:any, img_path:str)->np.array:
         img = imageio.imread(img_path, mode='F') # read the image in grayscale

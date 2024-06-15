@@ -3,7 +3,7 @@ import pygame
 from utils.colors import Colors
 from utils.canvas import Canvas
 from pages.page import Page
-from utils.ai import AI
+from external.ai import AI
 from utils.input import Input
 import numpy as np
 import matplotlib.pyplot as plt

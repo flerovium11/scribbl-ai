@@ -1,8 +1,8 @@
 from typing import Callable
 
 class EventBool:
-    def __init__(self:any, change_function:Callable, initial_state=False)->None:
-        self.state = True
+    def __init__(self:any, change_function:Callable, initial_state=True)->None:
+        self.state = initial_state
         self.change_function = change_function
     
     def switch_true(self:any)->bool:
