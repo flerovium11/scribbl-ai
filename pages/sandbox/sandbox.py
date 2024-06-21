@@ -7,7 +7,7 @@ from external.ai import AI
 from utils.input import Input
 import numpy as np
 import matplotlib.pyplot as plt
-from utils.image import image
+from external.image import image
 
 class Sandbox(Page):
     rotate = pygame.USEREVENT + 1

@@ -6,7 +6,9 @@ from pages.menu import Menu
 from pages.info import Info
 from pages.lobby import Lobby
 from pages.enter_name import EnterName
+from external.definitions import create_logger
 from pages.sandbox import Sandbox
+import logging
 
 class Game():
     def __init__(self:any, dim:tuple[float]=(650, 550))->None:
@@ -15,6 +17,9 @@ class Game():
         flags = pygame.DOUBLEBUF | pygame.RESIZABLE
         self.screen = pygame.display.set_mode(self.dim, flags)
         self.running = True
+        self.client = None
+        self.page = None
+        self.log = create_logger('game.log', console_level=logging.ERROR)
         pygame.display.set_caption('ScribblAI')
         logo = pygame.image.load('./assets/logo.png').convert_alpha()
         pygame.display.set_icon(logo)
@@ -49,6 +54,9 @@ class Game():
         if page not in self.pages:
             raise ValueError(f'Page {page} does not exist')
 
+        if self.page is not None:
+            self.page.leave()
+        
         self.pagename = page
         self.page = self.pages[page](self, self.pagename)
         self.page.start()
@@ -78,6 +86,13 @@ class Game():
 if __name__ == '__main__':
     pygame.init()
     game = Game()
-    game.start()
-    # TODO: send disconnect if connected to server
+
+    try:
+        game.start()
+    except KeyboardInterrupt:
+        print('Game stopped by KeyboardInterrupt')
+
+    if game.client is not None:
+        game.client.disconnect()
+    
     pygame.quit()

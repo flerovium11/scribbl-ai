@@ -1,13 +1,13 @@
-from enum import Enum
 import socket
 import os
-import logging
 import threading
 import json
+import numpy as np
 from time import sleep
 from functools import cmp_to_key
 import sys
 sys.path.append('../..')
+import external.image as image
 from external.ai import AI, german_categories
 from external.definitions import create_logger, LobbyState, PlayerRole, EXTERNAL_DIR
 from random import randint, shuffle
@@ -158,8 +158,15 @@ class Lobby:
                 
                 self.state = LobbyState.STOPPED
         
-        while self.state is LobbyState.RESULTS:
-            self.state = LobbyState.STOPPED
+        if self.state is LobbyState.RESULTS:
+            try:
+                prediction = self.model.predictImage(image.format_for_ai(self.grid) if self.grid is not None else np.array([[0]])) # else an empty white
+                self.ai_guess = prediction[0]['category']
+            except Exception:
+                if self.log is not None:
+                    self.log.exception('AI prediction failed')
+                
+                self.ai_guess = 'Error'
         
         self.close()
     
@@ -206,13 +213,13 @@ class Player:
                 self.packets_lost = 0
                 reply = json.loads(data.decode('utf-8'))
                 return reply
-        except ConnectionResetError as error:
+        except (ConnectionResetError, ConnectionAbortedError) as error:
             # no log here because error is expected when client leaves and warning will be displayed by lose_packet() anyway
             self.lose_packet()
         except (ConnectionError, TimeoutError) as error:
             # the rest of exceptions are unexpected
             if self.log is not None:
-                self.log.exception('Connection to client failed.!')
+                self.log.exception('Connection to client failed!')
             
             self.lose_packet()
         except json.JSONDecodeError as error:
@@ -303,7 +310,7 @@ class Player:
                         if self.role is PlayerRole.DRAWER:
                             self.lobby.grid = reply['grid'] if 'grid' in reply else None
 
-                            if self.lobby.word is None and reply['word_index'] is not None:
+                            if self.lobby.word is None and 'word_index' in reply and reply['word_index'] is not None:
                                 self.lobby.word = self.lobby.words[reply['word_index']]
                     else:
                         if self.log is not None:

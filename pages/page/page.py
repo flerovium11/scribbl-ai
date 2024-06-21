@@ -30,7 +30,10 @@ class Page:
             if self.update:
                 self.draw()
                 pygame.display.flip()
-                self.update = False  
+                self.update = False
+    
+    def leave(self:any)->None:
+        self.on_leave()
 
     def draw(self:any)->None:
         if not hasattr(self, 'btn_dim'): self.btn_dim = (200, 100)
@@ -60,4 +63,7 @@ class Page:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
 
     def on_start(self:any)->None:
+        pass
+
+    def on_leave(self:any)->None:
         pass

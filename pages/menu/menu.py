@@ -1,7 +1,9 @@
+import threading
 import pygame
 from utils.colors import Colors
 from utils.eventbool import EventBool
 from pages.page import Page
+from utils.client import Client, ClientStatus
 
 class Menu(Page):
     modebtn_radius = 10
@@ -11,6 +13,7 @@ class Menu(Page):
     rotate_bg = -0.1
     rotate = pygame.USEREVENT + 1
     base_modebtn_dim = modebtn_dim = modebtn1_dim = modebtn2_dim = (220, 140)
+    multiplayer_info = None
     
     def on_init(self:any)->None:
         pygame.event.set_allowed([self.rotate])
@@ -45,6 +48,10 @@ class Menu(Page):
         modebtn1_x = self.game.dim[0]/2 - self.modebtn_dim[0] - self.buttons_distance/2 + self.modebtn_dim[0]/2 - self.modebtn1_dim[0]/2
         modebtn1_y = modebtn_y + self.modebtn_dim[1]/2 - self.modebtn1_dim[1]/2
         self.modebtn1 = self.game.create_btn((modebtn1_x, modebtn1_y), self.modebtn1_dim, Colors.purple, self.modebtn_radius, 'Mehrspieler', 'Arial', title_fs / 4, Colors.salmon)
+
+        if self.multiplayer_info is not None:
+            multiplayer_info_text = self.game.text_surface(self.multiplayer_info, 'Arial', title_fs / 6, Colors.salmon)
+            self.game.draw(multiplayer_info_text, (modebtn1_x + self.modebtn1_dim[0] / 2 - multiplayer_info_text.get_width() / 2, modebtn1_y + self.modebtn1_dim[1] / 1.5))
         
         modebtn2_x = self.game.dim[0]/2 + self.buttons_distance/2 + self.modebtn_dim[0]/2 - self.modebtn2_dim[0]/2
         modebtn2_y = modebtn_y + self.modebtn_dim[1]/2 - self.modebtn2_dim[1]/2
@@ -83,6 +90,20 @@ class Menu(Page):
         elif self.qb_hover.switch_false():
             self.qbr = self.base_qbr
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+        
+        if self.game.client is not None:
+            if self.game.client.status is ClientStatus.CONNECTED:
+                self.multiplayer_info = 'Verbunden'
+                self.connect_thread.join()
+                self.game.goto_page('Lobby')
+            elif self.game.client.status is ClientStatus.CONNECTING:
+                self.multiplayer_info = 'Verbinde...'
+            elif self.game.client.status is ClientStatus.ERROR:
+                self.multiplayer_info = 'Verbindung fehlgeschlagen'
+            else:
+                self.multiplayer_info = None
+        else:
+            self.multiplayer_info = None
 
 
     def event_check(self:any, event:pygame.event)->None:
@@ -98,4 +119,6 @@ class Menu(Page):
             self.game.goto_page('Sandbox')
 
         if self.modebtn1_hover.state and event.type == pygame.MOUSEBUTTONDOWN:
-            self.game.goto_page('Lobby')
+            self.game.client = Client('localhost', 1000, self.game.log)
+            self.connect_thread = threading.Thread(target=self.game.client.start)
+            self.connect_thread.start()

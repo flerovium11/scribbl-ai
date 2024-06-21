@@ -54,6 +54,7 @@ class Info(Page):
                 pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
         elif self.back_button_hover.switch_false():
             self.btn_dim = self.base_btn_dim
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
 
     def event_check(self:any, event:pygame.event)->None:
         if event.type == self.rotate:

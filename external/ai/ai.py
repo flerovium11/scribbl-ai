@@ -1,6 +1,7 @@
 import numpy as np
 import os
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+print('Loading keras, this can take a while... (especially on cold start)')
 import keras.models
 from keras.models import load_model
 import imageio
@@ -27,7 +28,7 @@ class AI:
 
     def convertImagePath(self:any, img_path:str)->np.array:
         img = imageio.imread(img_path, mode='F') # read the image in grayscale
-        img = np.invert(img.astype(np.uint8)) # to change white to black and vice versa
+        img = np.invert(img.astype(np.uint8)) # change white to black and vice versa
         return self.shapeImage(img)
 
     def predictImage(self:any, img:np.array)->dict[str, any]:

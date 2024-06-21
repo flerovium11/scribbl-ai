@@ -6,9 +6,16 @@ import sys
 sys.path.append('../..')
 from external.definitions import LobbyState, PlayerRole, create_logger, EXTERNAL_DIR
 import os
+from enum import Enum, auto
 from dotenv import load_dotenv
 
 env_path = os.path.join(EXTERNAL_DIR, '.env')
+
+class ClientStatus(Enum):
+    CONNECTING = auto()
+    CONNECTED = auto()
+    DISCONNECTED = auto()
+    ERROR = auto()
 
 class Client:
     def __init__(self:any, host:str='', port:int=5555, log:any=None, name:str='Unknown', on_receive:callable=lambda: None)->None:
@@ -24,6 +31,7 @@ class Client:
         
         self.active = True
         self.online = True
+        self.status = ClientStatus.CONNECTING
         self.packets_lost = 0
         # info should never be changed by the client
         self.info = {}
@@ -47,28 +55,31 @@ class Client:
         self.client_thread = threading.Thread(target=self.main, args=())
         self.client_thread.start()
 
-        while self.active:
-            try:
-                sleep(1)
-            except KeyboardInterrupt:
-                if self.log is not None:
-                    self.log.info('Program stopped by KeyboardInterrupt')
-                
-                self.active = False
-        
-        if self.client_thread.is_alive():
-            self.client_thread.join()
-        
-        self.disconnect()
+        if __name__ == '__main__':
+            while self.active:
+                try:
+                    sleep(1)
+                except KeyboardInterrupt:
+                    if self.log is not None:
+                        self.log.info('Program stopped by KeyboardInterrupt')
+                    
+                    self.active = False
+            
+            if self.client_thread.is_alive():
+                self.client_thread.join()
+            
+            self.disconnect()
     
     def connect(self:any)->None:
         try:
             self.s.connect(self.addr)
+            self.status = ClientStatus.CONNECTED
         except socket.error as error:
             if self.log is not None:
                 self.log.exception('Connection to server failed')
             
-            self.active = False
+            self.active = self.online = False
+            self.status = ClientStatus.ERROR
             exit()
 
     def main(self:any)->None:
@@ -160,16 +171,16 @@ class Client:
             # wait for server to send packet and answer with leave_message
             self.s.recv(4096)
             self.s.send(json.dumps(leave_message).encode())
-        except KeyboardInterrupt as error:
+        except Exception as error:
             pass
             
         self.online = self.active = False
         self.s.close()
-        exit()
+        self.status = ClientStatus.DISCONNECTED
 
 if __name__ == '__main__':
     logger = create_logger('client.log')
-    client_count = 6
+    client_count = 2
     clients = []
 
     for i in range(client_count):
@@ -184,6 +195,6 @@ if __name__ == '__main__':
             sleep(1)
         except KeyboardInterrupt:
             for client in clients:
-                client.active = False
+                client.disconnect()
             
             break
