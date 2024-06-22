@@ -64,3 +64,6 @@ class Info(Page):
         
         if self.back_button_hover.state and event.type == pygame.MOUSEBUTTONDOWN:
             self.game.goto_page('Menu')
+        
+        if event.type == pygame.VIDEORESIZE:
+            self.back_button_hover.switch_true()

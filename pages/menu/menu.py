@@ -13,16 +13,21 @@ class Menu(Page):
     rotate_bg = -0.1
     rotate = pygame.USEREVENT + 1
     base_modebtn_dim = modebtn_dim = modebtn1_dim = modebtn2_dim = (220, 140)
-    multiplayer_info = None
     
     def on_init(self:any)->None:
         pygame.event.set_allowed([self.rotate])
         self.modebtn1_hover = EventBool(self.trigger_update)
         self.modebtn2_hover = EventBool(self.trigger_update)
         self.qb_hover = EventBool(self.trigger_update)
+        self.connect_thread = None
     
     def on_start(self:any)->None:
         pygame.time.set_timer(self.rotate, 500)
+        self.multiplayer_info = None
+
+        if self.game.return_info is not None:
+            self.multiplayer_info = self.game.return_info
+            self.game.return_info = None
 
     def draw(self:any)->None:
         self.game.screen.fill(Colors.beige)
@@ -50,8 +55,10 @@ class Menu(Page):
         self.modebtn1 = self.game.create_btn((modebtn1_x, modebtn1_y), self.modebtn1_dim, Colors.purple, self.modebtn_radius, 'Mehrspieler', 'Arial', title_fs / 4, Colors.salmon)
 
         if self.multiplayer_info is not None:
-            multiplayer_info_text = self.game.text_surface(self.multiplayer_info, 'Arial', title_fs / 6, Colors.salmon)
-            self.game.draw(multiplayer_info_text, (modebtn1_x + self.modebtn1_dim[0] / 2 - multiplayer_info_text.get_width() / 2, modebtn1_y + self.modebtn1_dim[1] / 1.5))
+            multiplayer_info_text = self.game.text_surface(self.multiplayer_info, 'Arial', title_fs / 8, Colors.salmon)
+            info_dim = (multiplayer_info_text.get_width() + title_padding_top, multiplayer_info_text.get_height() * 1.5)
+            info_pos = (title_fs / 10, self.game.dim[1] - info_dim[1] - title_fs / 10)
+            self.game.create_btn(info_pos, info_dim, Colors.black, 10, self.multiplayer_info, 'Arial', title_fs / 8, Colors.white)
         
         modebtn2_x = self.game.dim[0]/2 + self.buttons_distance/2 + self.modebtn_dim[0]/2 - self.modebtn2_dim[0]/2
         modebtn2_y = modebtn_y + self.modebtn_dim[1]/2 - self.modebtn2_dim[1]/2
@@ -92,7 +99,7 @@ class Menu(Page):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
         
         if self.game.client is not None:
-            if self.game.client.status is ClientStatus.CONNECTED:
+            if self.game.client.status is ClientStatus.CONNECTED and self.connect_thread is not None:
                 self.multiplayer_info = 'Verbunden'
                 self.connect_thread.join()
                 self.game.goto_page('Lobby')
@@ -100,18 +107,13 @@ class Menu(Page):
                 self.multiplayer_info = 'Verbinde...'
             elif self.game.client.status is ClientStatus.ERROR:
                 self.multiplayer_info = 'Verbindung fehlgeschlagen'
-            else:
-                self.multiplayer_info = None
-        else:
-            self.multiplayer_info = None
-
 
     def event_check(self:any, event:pygame.event)->None:
         if event.type == self.rotate:
             self.rotate_title *= -1
             self.rotate_bg *= -1
             self.trigger_update()
-        
+    
         if self.qb_hover.state and event.type == pygame.MOUSEBUTTONDOWN:
             self.game.goto_page('Info')
         
@@ -122,3 +124,8 @@ class Menu(Page):
             self.game.client = Client('localhost', 1000, self.game.log)
             self.connect_thread = threading.Thread(target=self.game.client.start)
             self.connect_thread.start()
+        
+        if event.type == pygame.VIDEORESIZE:
+            self.qb_hover.switch_true()
+            self.modebtn1_hover.switch_true()
+            self.modebtn2_hover.switch_true()

@@ -1,6 +1,7 @@
 import pygame
 from utils.colors import Colors
 from utils.eventbool import EventBool
+from external.definitions import LobbyState, PlayerRole
 
 class Page:
     # not for menu page
@@ -61,9 +62,43 @@ class Page:
                 pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
         elif self.back_button_hover.switch_false():
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+    
+    def network_tick(self:any)->None:
+        pass
 
     def on_start(self:any)->None:
         pass
 
     def on_leave(self:any)->None:
         pass
+
+    def check_network_connection(self:any, allow_states:list[LobbyState]=[], allow_roles:list[PlayerRole]=[])->None:
+        self.clt = self.game.client
+
+        connected = self.clt is not None and self.clt.info is not None
+        in_lobby = self.clt.info['mode'] == 'lobby' if connected else False
+        right_state = self.clt.info['lobby']['state'] in allow_states if in_lobby else False
+        right_role = self.clt.info['lobby']['players'][self.clt.info['id']]['role'] in allow_roles if right_state else False
+        
+        if connected and in_lobby:
+            self.clt.player = self.clt.info['lobby']['players'][self.clt.info['id']]
+            self.clt.player_count = len(self.clt.info['lobby']['players'])
+            self.clt.count = self.clt.info['lobby']['countdown']
+            self.clt.max_players = self.clt.info['lobby']['max_players']
+            self.clt.min_players = self.clt.info['lobby']['min_players']
+            self.clt.game_state = self.clt.info['lobby']['state']
+            self.clt.status = 'online' if self.clt.player['online'] else 'offline'
+            self.clt.players = self.clt.info['lobby']['players']
+
+            if self.clt.game_state == LobbyState.RESULTS.name:
+                self.game.goto_page('Result')
+
+            if not right_role or not right_state:
+                if self.game.log is not None:
+                    self.game.log.error(f'Invalid {"state" if not right_state else "player role"} for page {self.game.pagename} - allowed: {str(allow_states) if not right_state else str(allow_roles)}')
+                
+                self.game.return_info = 'Ungültiger Zustand'
+                self.game.goto_page('Menu')
+        else:
+            self.game.return_info = 'Verbindung verloren'
+            self.game.goto_page('Menu')

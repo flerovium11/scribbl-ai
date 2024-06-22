@@ -5,7 +5,10 @@ from typing import Optional
 from pages.menu import Menu
 from pages.info import Info
 from pages.lobby import Lobby
-from pages.enter_name import EnterName
+from pages.draw import Draw
+from pages.guess import Guess
+from pages.chat import Chat
+from pages.result import Result
 from external.definitions import create_logger
 from pages.sandbox import Sandbox
 import logging
@@ -19,6 +22,7 @@ class Game():
         self.running = True
         self.client = None
         self.page = None
+        self.return_info = None
         self.log = create_logger('game.log', console_level=logging.ERROR)
         pygame.display.set_caption('ScribblAI')
         logo = pygame.image.load('./assets/logo.png').convert_alpha()
@@ -26,10 +30,13 @@ class Game():
 
         self.pages = {
             'Menu': Menu,
-            'EnterName': EnterName,
             'Lobby': Lobby,
             'Sandbox': Sandbox,
             'Info': Info,
+            'Draw': Draw,
+            'Guess': Guess,
+            'Chat': Chat,
+            'Result': Result,
         }
 
         self.fonts = {

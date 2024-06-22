@@ -3,6 +3,7 @@ import threading
 import json
 from time import sleep
 import sys
+from typing import Optional
 sys.path.append('../..')
 from external.definitions import LobbyState, PlayerRole, create_logger, EXTERNAL_DIR
 import os
@@ -18,7 +19,7 @@ class ClientStatus(Enum):
     ERROR = auto()
 
 class Client:
-    def __init__(self:any, host:str='', port:int=5555, log:any=None, name:str='Unknown', on_receive:callable=lambda: None)->None:
+    def __init__(self:any, host:str='', port:int=5555, log:any=None, name:Optional[str]=None, on_receive:callable=lambda: None)->None:
         try:
             load_dotenv(env_path)
             self.max_wait_time = float(os.getenv('CLIENT_MAX_WAIT_TIME'))

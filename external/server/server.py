@@ -1,3 +1,4 @@
+import logging
 import socket
 import os
 import threading
@@ -5,6 +6,7 @@ import json
 import numpy as np
 from time import sleep
 from functools import cmp_to_key
+from typing import Optional
 import sys
 sys.path.append('../..')
 import external.image as image
@@ -57,7 +59,7 @@ class Lobby:
         self.lobby_thread.start()
     
     def remove_player(self:any, player:any)->None:
-        if self.state in [LobbyState.WAITING, LobbyState.READY] and len(self.players) > player.id: # players are not removed from the player list during game and results
+        if self.state is LobbyState.WAITING and len(self.players) > player.id: # players are only removed in waiting state
             self.players.pop(player.id)
 
             for p in self.players[player.id:]:
@@ -101,9 +103,6 @@ class Lobby:
         if self.state is LobbyState.READY:
             try:
                 sleep(2) # for suspense
-                
-                if len(self.players) == 0:
-                    self.state = LobbyState.STOPPED
                 
                 # check if lobby hasn't been killed yet by higher force
                 if self.state is LobbyState.READY:
@@ -175,7 +174,7 @@ class Lobby:
         exit()
             
 class Player:
-    def __init__(self:any, conn:any, addr:str, role:PlayerRole=None, name:str='Unknown', log:any=None)->None:
+    def __init__(self:any, conn:any, addr:str, role:PlayerRole=None, name:Optional[str]=None, log:any=None)->None:
         try:
             load_dotenv(env_path)
             self.max_packets_lost = int(os.getenv('PLAYER_MAX_PACKETS_LOST'))
@@ -369,6 +368,7 @@ class Server:
 
         while self.running:
             try:
+                print(*[f'lobby {lobby.id} ({len(lobby.players)}) {lobby.state.name}' for lobby in self.lobbies])
                 sleep(1)
             except KeyboardInterrupt:
                 if self.log is not None:
@@ -421,6 +421,6 @@ class Server:
                     self.log.info('Socket accept aborted')
 
 if __name__ == '__main__':
-    logger = create_logger('server.log')
+    logger = create_logger('server.log', console_level=logging.ERROR)
     server = Server(host='localhost', port=1000, log=logger)
     server.start()

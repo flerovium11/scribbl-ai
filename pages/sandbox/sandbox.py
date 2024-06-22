@@ -106,6 +106,9 @@ class Sandbox(Page):
 
         self.canvas.event_check(event)    
         self.text_input.event_check(event)  
+
+        if event.type == pygame.VIDEORESIZE:
+            self.back_button_hover.switch_true()
     
     def add_training_example(self:any)->None:
         img = image.format_for_ai(self.canvas.grid)        
