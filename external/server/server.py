@@ -11,7 +11,7 @@ import sys
 sys.path.append('../..')
 import external.image as image
 from external.ai import AI, german_categories
-from external.definitions import create_logger, LobbyState, PlayerRole, EXTERNAL_DIR
+from external.definitions import create_logger, LobbyState, PlayerRole, EXTERNAL_DIR, recvall, decompress_grid
 from random import randint, shuffle
 from dotenv import load_dotenv
 
@@ -159,7 +159,10 @@ class Lobby:
         
         if self.state is LobbyState.RESULTS:
             try:
-                prediction = self.model.predictImage(image.format_for_ai(self.grid) if self.grid is not None else np.array([[0]])) # else an empty white
+                grid = self.grid if self.grid is not None else {'tiles': [[0]], 'dim': (1, 1)}
+                (grid_width, grid_height) = grid['dim']
+                grid = decompress_grid(grid['tiles'], grid_width) if 'compressed' in grid else grid['tiles']
+                prediction = self.model.predictImage(image.format_for_ai(grid) if self.grid is not None else np.array([[0]])) # else an empty white
                 self.ai_guess = prediction[0]['category']
             except Exception:
                 if self.log is not None:
@@ -203,8 +206,8 @@ class Player:
     def transceive(self:any, packet:dict[str, any])->dict[str, any]|None:
         try:
             self.conn.settimeout(self.max_wait_time)
-            self.conn.send(json.dumps(packet).encode())
-            data = self.conn.recv(4096)
+            self.conn.send(json.dumps(packet).encode() + '\r\n'.encode())
+            data = recvall(self.conn)
 
             if not data:
                 self.lose_packet()
@@ -335,8 +338,7 @@ class Player:
         
         try:
             packet = {'mode': LobbyState.DISCONNECTED.name}
-            self.conn.settimeout(self.max_wait_time)
-            self.conn.send(json.dumps(packet).encode())
+            self.conn.send(json.dumps(packet).encode() + '\r\n'.encode())
         except (ConnectionError, TimeoutError) as error:
             pass
 

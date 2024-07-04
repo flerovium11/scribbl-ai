@@ -15,7 +15,6 @@ class Sandbox(Page):
     def on_init(self:any)->None:
         self.canvas = Canvas(self.game, self)
         self.ai = AI()
-        pygame.event.set_allowed([self.rotate])
         self.text_input = Input(self.game, self)
     
     def on_start(self:any)->None:

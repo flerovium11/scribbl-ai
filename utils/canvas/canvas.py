@@ -4,18 +4,19 @@ from utils.eventbool import EventBool
 import pygame
 
 class Canvas:
-    def __init__(self:any, game:any, page:any)->None:
+    def __init__(self:any, game:any, page:any, readonly: bool = False, grid_width: int = 200, grid_height:int = 200)->None:
         self.game = game
         self.page = page
+        self.readonly = readonly
         self.mode = 'draw'
         self.pencil_img = pygame.image.load('./assets/pencil.png').convert_alpha()
         self.eraser_img = pygame.image.load('./assets/eraser.png').convert_alpha()
         self.trash_img = pygame.image.load('./assets/trash.png').convert_alpha()
         self.drawing = self.ai_predict = False
-        self.grid_width = 200
-        self.grid_height = 200
+        self.grid_width = grid_width
+        self.grid_height = grid_height
         self.grid = self.empty_grid(self.grid_width, self.grid_height)
-        self.draw_radius_proportion = 0.03
+        self.draw_radius_proportion = 0.01
         self.draw_radius = round(self.grid_width * self.draw_radius_proportion)
         self.max_draw_radius = self.draw_radius * 10
         self.min_draw_radius = 0
@@ -54,35 +55,37 @@ class Canvas:
                         self.grid[x][y] = max(self.grid[x][y], darkness)
     
     def draw(self:any, pos:tuple[float], dim:tuple[float], color:Colors)->None:
-        self.canvas = pygame.Rect(pos[0], pos[1], dim[0], dim[1] * 0.875)
+        self.canvas = pygame.Rect(pos[0], pos[1], dim[0], dim[1] * (1 if self.readonly else 0.875))
         bdrad = 10
         self.canvas.inflate(-2 * bdrad, -2 * bdrad)
         pygame.draw.rect(self.game.screen, color, self.canvas, border_radius=bdrad)
-        icon_size = dim[1] * 0.075
 
-        pencil_pos = (pos[0], pos[1] + dim[1] * 0.9)
-        eraser_pos = (pos[0] + 2 * icon_size, pos[1] + dim[1] * 0.9)
-        trash_pos = (pos[0] + 4 * icon_size, pos[1] + dim[1] * 0.9)
-        self.pencil_size = (icon_size * (1 + self.phover.state / 10), icon_size * (1 + self.phover.state / 10))
-        eraser_size = (icon_size * (1 + self.ehover.state / 10), icon_size * (1 + self.ehover.state / 10))
-        trash_size = (icon_size * (1 + self.thover.state / 10), icon_size * (1 + self.thover.state / 10))
+        if not self.readonly:
+            icon_size = dim[1] * 0.075
+            pencil_pos = (pos[0], pos[1] + dim[1] * 0.9)
+            eraser_pos = (pos[0] + 2 * icon_size, pos[1] + dim[1] * 0.9)
+            trash_pos = (pos[0] + 4 * icon_size, pos[1] + dim[1] * 0.9)
+            self.pencil_size = (icon_size * (1 + self.phover.state / 10), icon_size * (1 + self.phover.state / 10))
+            eraser_size = (icon_size * (1 + self.ehover.state / 10), icon_size * (1 + self.ehover.state / 10))
+            trash_size = (icon_size * (1 + self.thover.state / 10), icon_size * (1 + self.thover.state / 10))
 
-        self.pencil_rect = pygame.Rect(pencil_pos, self.pencil_size)
-        self.eraser_rect = pygame.Rect(eraser_pos, eraser_size)
-        self.trash_rect = pygame.Rect(trash_pos, trash_size)
+            self.pencil_rect = pygame.Rect(pencil_pos, self.pencil_size)
+            self.eraser_rect = pygame.Rect(eraser_pos, eraser_size)
+            self.trash_rect = pygame.Rect(trash_pos, trash_size)
 
-        self.game.draw(pygame.transform.smoothscale(self.pencil_img, self.pencil_size), pencil_pos)
-        self.game.draw(pygame.transform.smoothscale(self.eraser_img, eraser_size), eraser_pos)
-        self.game.draw(pygame.transform.smoothscale(self.trash_img, trash_size), trash_pos)
+            self.game.draw(pygame.transform.smoothscale(self.pencil_img, self.pencil_size), pencil_pos)
+            self.game.draw(pygame.transform.smoothscale(self.eraser_img, eraser_size), eraser_pos)
+            self.game.draw(pygame.transform.smoothscale(self.trash_img, trash_size), trash_pos)
         
         self.draw_trace()
-
-        if self.hover.state and hasattr(self.page, 'mouse_pos'):
-            img = self.pencil_img if self.mode == 'draw' else self.eraser_img
-            self.game.draw(pygame.transform.smoothscale(img, tuple([val / 1.5 for val in self.pencil_size])), (self.page.mouse_pos[0], self.page.mouse_pos[1] - self.pencil_size[1] / 2 - 5))
         
-        if pygame.time.get_ticks() - self.scrolled_time <= 1000 and hasattr(self.page, 'mouse_pos'):
-            pygame.draw.circle(self.game.screen, Colors.pink, self.page.mouse_pos, (self.draw_radius if self.mode == 'draw' else self.erase_radius) * self.canvas.width / self.grid_width + 2, width=1)
+        if not self.readonly:
+            if self.hover.state and hasattr(self.page, 'mouse_pos'):
+                img = self.pencil_img if self.mode == 'draw' else self.eraser_img
+                self.game.draw(pygame.transform.smoothscale(img, tuple([val / 1.5 for val in self.pencil_size])), (self.page.mouse_pos[0], self.page.mouse_pos[1] - self.pencil_size[1] / 2 - 5))
+        
+            if pygame.time.get_ticks() - self.scrolled_time <= 1000 and hasattr(self.page, 'mouse_pos'):
+                pygame.draw.circle(self.game.screen, Colors.pink, self.page.mouse_pos, (self.draw_radius if self.mode == 'draw' else self.erase_radius) * self.canvas.width / self.grid_width + 2, width=1)
 
     def normalize_pos(self:any, pos:tuple[float])->tuple[float]:
         pos_x = math.floor((pos[0] - self.canvas.x) / self.canvas.width * self.grid_width)
@@ -93,6 +96,9 @@ class Canvas:
         return (min(self.grid_width - 1, max(0, x)), min(self.grid_height - 1, max(0, y)))
     
     def iteration(self:any)->None:
+        if self.readonly:
+            return
+    
         if self.canvas.collidepoint(self.page.mouse_pos):
             if self.hover.switch_true():
                 pygame.mouse.set_cursor((8,8),(0,0),(0,0,0,0,0,0,0,0),(0,0,0,0,0,0,0,0))
@@ -121,6 +127,9 @@ class Canvas:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
 
     def event_check(self:any, event:pygame.event)->None: 
+        if self.readonly:
+            return
+        
         if self.phover.state and event.type == pygame.MOUSEBUTTONDOWN:
             self.mode = 'draw'
             self.scrolled_time = pygame.time.get_ticks()
@@ -178,7 +187,7 @@ class Canvas:
         for x in range(self.grid_width):
             for y in range(self.grid_height):
                 if self.grid[x][y] > 0:
-                    rect = pygame.Rect(self.canvas.x + x / self.grid_width * self.canvas.width, self.canvas.y + y / self.grid_height * self.canvas.height, math.ceil(self.canvas.width / self.grid_width), math.ceil(self.canvas.height / self.grid_height)) # * 1.2 weil sonst komische abstände entstehen
+                    rect = pygame.Rect(self.canvas.x + x / self.grid_width * self.canvas.width, self.canvas.y + y / self.grid_height * self.canvas.height, math.ceil(self.canvas.width / self.grid_width), math.ceil(self.canvas.height / self.grid_height))
                     brightness = int(255 - self.grid[x][y] * 255)
                     pygame.draw.rect(self.game.screen, pygame.Color(brightness, brightness, brightness), rect)
 

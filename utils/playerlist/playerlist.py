@@ -41,7 +41,13 @@ class PlayerList:
             if i == player_id:
                 player_name += ' (You)'
 
-            text = self.game.text_surface(player_name, 'Segoe UI Symbol', player_dim[1] / 2, text_color)
+            while True:
+                text = self.game.text_surface(player_name, 'Segoe UI Symbol', player_dim[1] / 2, text_color)
+                player_name = player_name[:-2]
+
+                if text.get_width() <= player_dim[0] - 3 * padding[0]:
+                    break
+            
             self.game.draw(text, (player_rect.x + padding[0], player_rect.y + player_rect.height // 2 - text.get_height() // 2))
 
             status = 'Ⓧ' if not player['active'] else u'⬤'

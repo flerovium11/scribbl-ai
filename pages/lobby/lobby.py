@@ -14,7 +14,7 @@ class Lobby(Page):
         self.was_connected = False
         self.game.playerlist = PlayerList(self.game)
         self.choosing_name = False
-        self.name_input = Input(self.game, self, Colors.beige, 40)
+        self.name_input = Input(self.game, self, Colors.beige, 40, placeholder_color=Colors.salmon, placeholder='Dein Name...')
         self.base_name_btn_dim = (0, 0)
         self.cancel_btn_hover = EventBool(self.trigger_update)
         self.enter_btn_hover = EventBool(self.trigger_update)
@@ -69,15 +69,15 @@ class Lobby(Page):
                 info_dim = (status_info_text.get_width() + title_padding, status_info_text.get_height() * 1.5)
                 info_pos = (title_fs / 3, self.game.dim[1] - info_dim[1] - title_fs / 3)
                 self.game.create_btn(info_pos, info_dim, status_color, 10, status, 'Arial', title_fs / 3, Colors.black)
-            if self.game.client.info['lobby']['state'] == LobbyState.READY.name:
+            elif self.game.client.info['lobby']['state'] == LobbyState.READY.name:
                 center_info = 'Spiel startet...'
                 remove_exit_btn = True
-            if self.game.client.info['lobby']['state'] in [LobbyState.CHOOSE_WORD.name, LobbyState.GAME.name]:
+            elif self.game.client.info['lobby']['state'] in [LobbyState.CHOOSE_WORD.name, LobbyState.GAME.name]:
                 if player['role'] == PlayerRole.DRAWER.name:
                     self.game.goto_page('Draw')
                 elif player['role'] == PlayerRole.GUESSER.name:
                     self.game.goto_page('Guess')
-            if self.game.client.info['lobby']['state'] in [LobbyState.STOPPED.name, LobbyState.DISCONNECTED.name]:
+            elif self.game.client.info['lobby']['state'] in [LobbyState.STOPPED.name, LobbyState.DISCONNECTED.name]:
                 center_info = 'Verbindung verloren'
         elif self.was_connected:
             self.game.client.disconnect()

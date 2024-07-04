@@ -5,7 +5,7 @@ from time import sleep
 import sys
 from typing import Optional
 sys.path.append('../..')
-from external.definitions import LobbyState, PlayerRole, create_logger, EXTERNAL_DIR
+from external.definitions import LobbyState, PlayerRole, create_logger, EXTERNAL_DIR, recvall
 import os
 from enum import Enum, auto
 from dotenv import load_dotenv
@@ -89,7 +89,7 @@ class Client:
 
         while self.active:
             try:
-                data = self.s.recv(4096)
+                data = recvall(self.s)
 
                 if not data:
                     self.lose_packet()
@@ -115,7 +115,7 @@ class Client:
                         if self.log is not None:
                             self.log.info(f'Received {str(packet)} from server - client at {self.addr_str}')
                     
-                    self.s.send(json.dumps(reply).encode())
+                    self.s.send((json.dumps(reply)).encode() + '\r\n'.encode())
 
                     if 'id' in self.info:
                         if self.log is not None:
@@ -170,8 +170,8 @@ class Client:
 
         try:
             # wait for server to send packet and answer with leave_message
-            self.s.recv(4096)
-            self.s.send(json.dumps(leave_message).encode())
+            recvall(self.s)
+            self.s.send(json.dumps(leave_message).encode() + '\r\n'.encode())
         except Exception as error:
             pass
             

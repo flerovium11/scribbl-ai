@@ -68,7 +68,7 @@ class Game():
         self.page = self.pages[page](self, self.pagename)
         self.page.start()
 
-    def create_btn(self:any, pos:tuple[float], dim:tuple[float], color:tuple, bdrad:float=0, text:str='', font:Optional[str]=None, fontsize:Optional[int]=None, fontcolor:Optional[tuple|str]=None)->pygame.rect:
+    def create_btn(self:any, pos:tuple[float], dim:tuple[float], color:tuple, bdrad:float=0, text:str='', font:Optional[str]=None, fontsize:Optional[int]=None, fontcolor:Optional[tuple|str]=None, auto_fontsize: bool = False, padding_x: int = 0)->pygame.rect:
         btn = pygame.Rect(pos[0], pos[1], dim[0], dim[1])
 
         if bdrad != 0: 
@@ -77,7 +77,13 @@ class Game():
         pygame.draw.rect(self.screen, color, btn, border_radius=bdrad)
 
         if text != '':
-            text_surface = self.text_surface(text, font, fontsize, fontcolor)
+            while True:
+                text_surface = self.text_surface(text, font, fontsize, fontcolor)
+                fontsize -= 1
+
+                if not auto_fontsize or text_surface.get_width() <= dim[0] - 2 * padding_x or fontsize < 10:
+                    break
+
             self.draw(text_surface, (btn.x + btn.width // 2 - text_surface.get_width() // 2, btn.y + btn.height // 2 - text_surface.get_height() // 2))
         
         return btn

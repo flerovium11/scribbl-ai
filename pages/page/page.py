@@ -17,6 +17,10 @@ class Page:
     
     def start(self:any)->None:
         self.on_start()
+
+        if hasattr(self, 'rotate'):
+            pygame.event.set_allowed([self.rotate])
+
         self.draw()
         pygame.display.flip()
 
@@ -81,21 +85,23 @@ class Page:
         right_role = self.clt.info['lobby']['players'][self.clt.info['id']]['role'] in allow_roles if right_state else False
         
         if connected and in_lobby:
-            self.clt.player = self.clt.info['lobby']['players'][self.clt.info['id']]
+            self.clt.lobby = self.clt.info['lobby']
+            self.clt.player = self.clt.lobby['players'][self.clt.info['id']]
             self.clt.player_count = len(self.clt.info['lobby']['players'])
-            self.clt.count = self.clt.info['lobby']['countdown']
-            self.clt.max_players = self.clt.info['lobby']['max_players']
-            self.clt.min_players = self.clt.info['lobby']['min_players']
-            self.clt.game_state = self.clt.info['lobby']['state']
+            self.clt.count = self.clt.lobby['countdown']
+            self.clt.max_players = self.clt.lobby['max_players']
+            self.clt.min_players = self.clt.lobby['min_players']
+            self.clt.game_state = self.clt.lobby['state']
             self.clt.status = 'online' if self.clt.player['online'] else 'offline'
-            self.clt.players = self.clt.info['lobby']['players']
+            self.clt.players = self.clt.lobby['players']
 
             if self.clt.game_state == LobbyState.RESULTS.name:
-                self.game.goto_page('Result')
+                self.game.goto_page('Chat')
+                return
 
             if not right_role or not right_state:
                 if self.game.log is not None:
-                    self.game.log.error(f'Invalid {"state" if not right_state else "player role"} for page {self.game.pagename} - allowed: {str(allow_states) if not right_state else str(allow_roles)}')
+                    self.game.log.error(f'Invalid {"state " + self.clt.game_state if not right_state else "player role " + self.clt.player["role"]} for page {self.game.pagename} - allowed: {str(allow_states) if not right_state else str(allow_roles)}')
                 
                 self.game.return_info = 'Ungültiger Zustand'
                 self.game.goto_page('Menu')
