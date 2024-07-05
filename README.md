@@ -1,2 +1,2 @@
 # scribblAI
-A python game based on scribbl.io but a team of humans plays against an AI
+A python game based on skribbl.io but a team of humans plays against an AI
