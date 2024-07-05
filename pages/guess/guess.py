@@ -66,7 +66,7 @@ class Guess(Page):
         done_btn_pos = (self.game.dim[0] - title_padding - 2 * self.done_btn_rad, playerlist_pos[1] + playerlist_dim[1] + title_padding)
         input_pos = (done_btn_pos[0] - input_dim[0] - 2 * title_padding, done_btn_pos[1])
         self.done_btn = pygame.Rect(*done_btn_pos, 2 * self.done_btn_rad, 2 * self.done_btn_rad)
-        done_btn_text = self.game.text_surface('X' if self.clt.has_guessed else '✔', 'Segoe UI Symbol', title_fs / 2, Colors.beige)
+        done_btn_text = self.game.text_surface('⮐' if self.clt.has_guessed else '✔', 'Segoe UI Symbol', title_fs / 2, Colors.beige)
         
         if self.clt.game_state == LobbyState.GAME.name:
             if self.text_input.manager.value != '':

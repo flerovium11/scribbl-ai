@@ -6,11 +6,8 @@ import sys
 from typing import Optional
 sys.path.append('../..')
 from external.definitions import LobbyState, PlayerRole, create_logger, EXTERNAL_DIR, recvall
-import os
+from external.vars import CLIENT_MAX_WAIT_TIME, CLIENT_MAX_PACKETS_LOST
 from enum import Enum, auto
-from dotenv import load_dotenv
-
-env_path = os.path.join(EXTERNAL_DIR, '.env')
 
 class ClientStatus(Enum):
     CONNECTING = auto()
@@ -21,12 +18,11 @@ class ClientStatus(Enum):
 class Client:
     def __init__(self:any, host:str='', port:int=5555, log:any=None, name:Optional[str]=None, on_receive:callable=lambda: None)->None:
         try:
-            load_dotenv(env_path)
-            self.max_wait_time = float(os.getenv('CLIENT_MAX_WAIT_TIME'))
-            self.max_packets_lost = int(os.getenv('CLIENT_MAX_PACKETS_LOST'))
-        except (KeyError, TypeError, ValueError) as error:
+            self.max_wait_time = float(CLIENT_MAX_WAIT_TIME)
+            self.max_packets_lost = int(CLIENT_MAX_PACKETS_LOST)
+        except (ValueError, NameError) as error:
             if log is not None:
-                log.exception(F'Environment variables wrong or missing in {env_path}')
+                log.exception('Variables wrong or missing in vars.py')
             
             exit()
         

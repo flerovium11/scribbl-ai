@@ -1,6 +1,5 @@
 import logging
 import socket
-import os
 import threading
 import json
 import numpy as np
@@ -13,28 +12,25 @@ import external.image as image
 from external.ai import AI, german_categories
 from external.definitions import create_logger, LobbyState, PlayerRole, EXTERNAL_DIR, recvall, decompress_grid
 from random import randint, shuffle
-from dotenv import load_dotenv
-
-env_path = os.path.join(EXTERNAL_DIR, '.env')
+from external.vars import *
 
 class Lobby:
     def __init__(self:any, server:any, id:int, players:list[any], log:any=None)->None:
         try:
-            load_dotenv(env_path)
-            self.min_players = int(os.getenv('LOBBY_MIN_PLAYERS'))
-            self.max_players = int(os.getenv('LOBBY_MAX_PLAYERS'))
-            self.choose_word_time = float(os.getenv('LOBBY_CHOOSE_WORD_TIME'))
-            self.choose_word_count = int(os.getenv('LOBBY_CHOOSE_WORD_COUNT'))
-            self.lobby_wait_time = float(os.getenv('LOBBY_WAIT_TIME'))
-            self.min_lobby_wait_time = float(os.getenv('LOBBY_MIN_WAIT_TIME'))
-            self.draw_time = float(os.getenv('LOBBY_DRAW_TIME'))
-            self.model_path = os.getenv('LOBBY_MODEL_PATH')
+            self.min_players = int(LOBBY_MIN_PLAYERS)
+            self.max_players = int(LOBBY_MAX_PLAYERS)
+            self.choose_word_time = float(LOBBY_CHOOSE_WORD_TIME)
+            self.choose_word_count = int(LOBBY_CHOOSE_WORD_COUNT)
+            self.lobby_wait_time = float(LOBBY_WAIT_TIME)
+            self.min_lobby_wait_time = float(LOBBY_MIN_WAIT_TIME)
+            self.draw_time = float(LOBBY_DRAW_TIME)
+            self.model_path = LOBBY_MODEL_PATH
 
             if self.model_path is None:
-                raise KeyError()
-        except (KeyError, TypeError, ValueError) as error:
+                raise ValueError()
+        except (ValueError, NameError) as error:
             if log is not None:
-                log.exception(F'Environment variables wrong or missing in {env_path}')
+                log.exception('Variables wrong or missing in vars.py')
             
             exit()
 
@@ -186,12 +182,11 @@ class Lobby:
 class Player:
     def __init__(self:any, conn:any, addr:str, role:PlayerRole=None, name:Optional[str]=None, log:any=None)->None:
         try:
-            load_dotenv(env_path)
-            self.max_packets_lost = int(os.getenv('PLAYER_MAX_PACKETS_LOST'))
-            self.max_wait_time = float(os.getenv('PLAYER_MAX_WAIT_TIME'))
-        except (KeyError, TypeError, ValueError) as error:
+            self.max_packets_lost = int(PLAYER_MAX_PACKETS_LOST)
+            self.max_wait_time = float(PLAYER_MAX_WAIT_TIME)
+        except (ValueError, NameError) as error:
             if log is not None:
-                log.exception(F'Environment variables wrong or missing in {env_path}')
+                log.exception('Variables wrong or missing in vars.py')
             
             exit()
         
