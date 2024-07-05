@@ -10,7 +10,6 @@ from skimage.transform import resize
 import sys
 sys.path.append('../..')
 from external.definitions import EXTERNAL_DIR
-import os
 
 categories_file = open(os.path.join(EXTERNAL_DIR, 'categories_german.txt'), encoding='utf-8')
 german_categories = [word.replace('\n', '') for word in categories_file.readlines()]

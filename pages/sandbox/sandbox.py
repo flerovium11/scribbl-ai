@@ -5,7 +5,6 @@ from utils.canvas import Canvas
 from pages.page import Page
 from external.ai import AI
 from utils.input import Input
-import numpy as np
 import matplotlib.pyplot as plt
 from external.image import image
 
@@ -84,6 +83,7 @@ class Sandbox(Page):
         if self.canvas.ai_predict:
             self.canvas.ai_predict = False
             img_array = image.format_for_ai(self.canvas.grid)
+            # präsentation
             # imgplot = plt.imshow(img_array, cmap='gray')
             # plt.show()
 
