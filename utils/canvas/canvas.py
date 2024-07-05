@@ -16,7 +16,7 @@ class Canvas:
         self.grid_width = grid_width
         self.grid_height = grid_height
         self.grid = self.empty_grid(self.grid_width, self.grid_height)
-        self.draw_radius_proportion = 0.01
+        self.draw_radius_proportion = 0.02
         self.draw_radius = round(self.grid_width * self.draw_radius_proportion)
         self.max_draw_radius = self.draw_radius * 10
         self.min_draw_radius = 0

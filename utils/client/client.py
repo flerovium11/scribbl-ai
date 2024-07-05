@@ -99,6 +99,7 @@ class Client:
 
                     if packet['mode'] == LobbyState.DISCONNECTED.name:
                         self.disconnect()
+                        break
                     
                     self.info = packet
                     self.on_receive()

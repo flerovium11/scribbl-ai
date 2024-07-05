@@ -26,26 +26,42 @@ class Info(Page):
         self.game.draw(pygame.transform.rotate(title, self.rotate_title * min_ratio * 2), (title_x, title_padding))
         self.btn = self.game.create_btn((title_padding - (self.btn_dim[0] - self.base_btn_dim[0])*0.5, title_padding - (self.btn_dim[1] - self.base_btn_dim[1])*0.5), self.btn_dim, Colors.purple, round(10 * min_ratio), 'Zurück', 'Arial', round(30 * min_ratio), Colors.salmon)
 
-        h1_fs = 30 * min_ratio
-        p_fs = 20 * min_ratio
+        h1_fs = 27 * min_ratio
+        p_fs = 18 * min_ratio
         h1_py = (40 * min_ratio, 20 * min_ratio)
         p_py = (10 * min_ratio, 10 * min_ratio)
         element_flow = []
-        element_flow.append({'py': h1_py, 'el': self.game.text_surface('Was passiert hier?', 'Ink Free', h1_fs, Colors.purple)})
-        element_flow.append({'py': p_py, 'el': self.game.text_surface('Das ist ein Spiel', 'Arial', p_fs, Colors.black)})
-        element_flow.append({'py': h1_py, 'el': self.game.text_surface('Was muss ich machen?', 'Ink Free', h1_fs, Colors.purple)})
-        element_flow.append({'py': p_py, 'el': self.game.text_surface('Du kannst Mehrspieler oder Sandkiste (Einzelspieler) spielen', 'Arial', p_fs, Colors.black)})
-        element_flow.append({'py': h1_py, 'el': self.game.text_surface('Wer hat das gemacht?', 'Ink Free', h1_fs, Colors.purple)})
-        element_flow.append({'py': p_py, 'el': self.game.text_surface('Ich habe das für die coding_academy gemacht (Ennio Binder)', 'Arial', p_fs, Colors.black)})
-        element_flow.append({'py': h1_py, 'el': self.game.text_surface('Wer hat das gemacht?', 'Ink Free', h1_fs, Colors.purple)})
+        element_flow.append({'py': h1_py, 'el': self.game.text_surface('Zweck', 'Ink Free', h1_fs, Colors.purple)})
+        self.paragraph('ScribblAI ist ein Spiel, das die Anwendungsmöglichkeiten von Bilderkennung mit KI und Multiplayer-Netzwerktechnik erforscht. Es wurde 2024 im Rahmen der Coding_Academy am WIFI Gmunden erschaffen.', 'Arial', p_fs, Colors.black, p_py, self.game.dim[0] / (p_fs * 0.5), element_flow)
+        element_flow.append({'py': h1_py, 'el': self.game.text_surface('Spielkonzept', 'Ink Free', h1_fs, Colors.purple)})
+        self.paragraph('Eine Person muss ein Wort zeichnen und die anderen müssen es erraten. Das Bild wird zusätzlich durch ein CNN geschickt, und sollte die KI das Bild richtig klassifizieren, verlieren alle menschlichen Spieler*innen. Das Ziel ist es folglich, so zu zeichnen, dass Menschen das Wort erraten können, aber kein Computeralgorithmus.', 'Arial', p_fs, Colors.black, p_py, self.game.dim[0] / (p_fs * 0.5), element_flow)
+        element_flow.append({'py': h1_py, 'el': self.game.text_surface('Danksagungen', 'Ink Free', h1_fs, Colors.purple)})
+        self.paragraph("""Danke an unseren WIFI-Trainer Hannes Lettner. \n
+Bilddatenset: quickdraw.withgoogle.com \n
+Grundlegende Spielidee: skribbl.io""", 'Arial', p_fs, Colors.black, p_py, self.game.dim[0] / (p_fs * 0.5), element_flow)
 
-        posy = ((self.game.dim[1] - title_padding - title.get_height()) - sum([el['el'].get_height() + el['py'][0] for el in element_flow])) / 2 + title.get_height() + title_padding
+        posy = 2 * title_padding + title.get_height()
         posx = (self.game.dim[0] - max([el['el'].get_width() for el in element_flow])) / 2
 
         for element in element_flow:
             posy += element['py'][0]
             self.game.draw(element['el'], (posx, posy))
             posy += element['py'][1]
+
+    def paragraph(self: any, text: str, font: str, fs: int, color: Colors, pad: int, maxlen: int, element_flow: list) -> None:
+        words = text.split(' ')
+        line = ''
+
+        for word in words:
+            if len(line + word + ' ') > maxlen or (len(word) and '\n' in word):
+                element_flow.append({'py': pad, 'el': self.game.text_surface(line[:-1], font, fs, color)})
+                line = word.replace('\n', '') + ' '
+            else:
+                line += word + ' '
+        
+        if line:
+            element_flow.append({'py': pad, 'el': self.game.text_surface(line[:-1], font, fs, color)})
+
 
     def iteration(self:any)->None:
         if self.btn.collidepoint(self.mouse_pos):

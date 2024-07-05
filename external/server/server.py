@@ -45,6 +45,8 @@ class Lobby:
         self.countdown = self.lobby_wait_time
         self.log = log
         self.ai_guess = None
+        self.ai_certainty = None
+        self.winner = None
         self.grid = None
         self.word = None
         self.model = AI(model_path=self.model_path)
@@ -148,6 +150,21 @@ class Lobby:
                     self.state = LobbyState.STOPPED
                 
                 if self.countdown == 0 or all([player.has_guessed or player.role is PlayerRole.DRAWER for player in self.players]):
+                    try:
+                        grid = self.grid if self.grid is not None else {'tiles': [[0]], 'dim': (1, 1)}
+                        (grid_width, grid_height) = grid['dim']
+                        grid = decompress_grid(grid['tiles'], grid_width) if 'compressed' in grid else grid['tiles']
+                        prediction = self.model.predictImage(image.format_for_ai(grid) if self.grid is not None else np.array([[0]])) # else an empty white
+                        self.ai_guess = prediction[0]['category']
+                        self.ai_certainty = float(prediction[0]['certainty'])
+                        players_guessed = any([player.guess == self.word for player in self.players])
+                        self.winner = 'ai' if self.ai_guess == self.word else 'humans' if players_guessed else 'none'
+                    except Exception:
+                        if self.log is not None:
+                            self.log.exception('AI prediction failed')
+                        
+                        self.ai_guess = 'Error'
+                    
                     self.state = LobbyState.RESULTS
                 
                 sleep(1)
@@ -158,17 +175,7 @@ class Lobby:
                 self.state = LobbyState.STOPPED
         
         if self.state is LobbyState.RESULTS:
-            try:
-                grid = self.grid if self.grid is not None else {'tiles': [[0]], 'dim': (1, 1)}
-                (grid_width, grid_height) = grid['dim']
-                grid = decompress_grid(grid['tiles'], grid_width) if 'compressed' in grid else grid['tiles']
-                prediction = self.model.predictImage(image.format_for_ai(grid) if self.grid is not None else np.array([[0]])) # else an empty white
-                self.ai_guess = prediction[0]['category']
-            except Exception:
-                if self.log is not None:
-                    self.log.exception('AI prediction failed')
-                
-                self.ai_guess = 'Error'
+            sleep(3)
         
         self.close()
     
@@ -275,6 +282,8 @@ class Player:
                     'state': self.lobby.state.name,
                     'grid': self.lobby.grid,
                     'ai_guess': self.lobby.ai_guess,
+                    'ai_certainty': self.lobby.ai_certainty,
+                    'winner': self.lobby.winner,
                     'players': [{
                             'name': player.name,
                             'id': player.id,

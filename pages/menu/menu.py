@@ -26,6 +26,9 @@ class Menu(Page):
         self.multiplayer_info = None
 
         if self.game.return_info is not None:
+            if self.game.return_info == 'play_again':
+                self.start_game()
+            
             self.multiplayer_info = self.game.return_info
             self.game.return_info = None
 
@@ -121,11 +124,14 @@ class Menu(Page):
             self.game.goto_page('Sandbox')
 
         if self.modebtn1_hover.state and event.type == pygame.MOUSEBUTTONDOWN:
-            self.game.client = Client('localhost', 1000, self.game.log)
-            self.connect_thread = threading.Thread(target=self.game.client.start)
-            self.connect_thread.start()
+            self.start_game()
         
         if event.type == pygame.VIDEORESIZE:
             self.qb_hover.switch_true()
             self.modebtn1_hover.switch_true()
             self.modebtn2_hover.switch_true()
+    
+    def start_game(self: any) -> None:
+        self.game.client = Client('localhost', 1000, self.game.log)
+        self.connect_thread = threading.Thread(target=self.game.client.start)
+        self.connect_thread.start()

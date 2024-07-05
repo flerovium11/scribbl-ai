@@ -11,7 +11,7 @@ from time import sleep
 import math
 
 class Message:
-    def __init__(self: any, game: any, text: str, sender: str, padding: tuple[int], color: Colors = Colors.salmon, text_color: Colors = Colors.purple, sender_color: Colors = Colors.beige, is_image: bool = False, canvas: Optional[Canvas] = None) -> None:
+    def __init__(self: any, game: any, text: str, sender: str, padding: tuple[int], color: Colors = Colors.salmon, text_color: Colors = Colors.purple, sender_color: Colors = Colors.white, is_image: bool = False, canvas: Optional[Canvas] = None) -> None:
         self.text = text
         self.sender = sender
         self.padding = padding
@@ -22,20 +22,23 @@ class Message:
         self.text_color = text_color
         self.sender_color = sender_color
         self.canvas = canvas
+        self.base_side = self.game.dim[0] / 4
     
     def draw(self: any, pos: list[int], title_padding: float) -> None:
         sender = self.game.text_surface(self.sender, 'Arial', 15, self.sender_color)
+        text = self.game.text_surface(self.text, 'Arial', 20, self.text_color)
 
         if self.is_image:
-            dim = (self.game.dim[0] / 4, self.game.dim[0] / 4 + sender.get_height() + 2 * self.padding[1])
+            dim = (self.base_side, self.base_side + sender.get_height() + 3 * self.padding[1] + text.get_height())
             self.message = pygame.Rect(pos[0], pos[1], dim[0], dim[1])
             bdrad = 10
             self.message.inflate(-2 * bdrad, -2 * bdrad)
             pygame.draw.rect(self.game.screen, self.color, self.message, border_radius=bdrad)
-            self.canvas.draw((pos[0] + self.padding[0], pos[1] + sender.get_height() + 2 * self.padding[1]), (dim[0] - 2 * self.padding[0], dim[1] - 3 * self.padding[1] - sender.get_height()), Colors.white)
+            self.canvas.draw((pos[0] + self.padding[0], pos[1] + sender.get_height() + 2 * self.padding[1]), (dim[0] - 2 * self.padding[0], dim[1] - 4 * self.padding[1] - sender.get_height() - text.get_height()), Colors.white)
+            self.game.draw(text, (pos[0] + self.padding[0], pos[1] + dim[1] - self.padding[1] - text.get_height()))
         else:
-            text = self.game.text_surface(self.text, 'Arial', 20, self.text_color)
-            dim = (max(text.get_width(), sender.get_width()) + 2 * self.padding[0], text.get_height() + sender.get_height() + 3 * self.padding[1])
+            min_width = self.game.dim[0] / 6
+            dim = (max(min_width, max(text.get_width(), sender.get_width()) + 2 * self.padding[0]), text.get_height() + sender.get_height() + 3 * self.padding[1])
             self.message = pygame.Rect(pos[0], pos[1], dim[0], dim[1])
             bdrad = 10
             self.message.inflate(-2 * bdrad, -2 * bdrad)
@@ -64,48 +67,48 @@ class Chat(Page):
             self.game.return_info = 'Ungültiger Zustand'
             self.game.goto_page('Menu')
 
-        lobby = self.game.client.info['lobby']
-        grid = lobby['grid'] if lobby['grid'] is not None else {'tiles': [[0]], 'dim': (1, 1)}
+        self.lobby = self.game.client.info['lobby']
+        grid = self.lobby['grid'] if self.lobby['grid'] is not None else {'tiles': [[0]], 'dim': (1, 1)}
         self.canvas.grid_width = grid['dim'][0]
         self.canvas.grid_height = grid['dim'][1]
         self.canvas.grid = decompress_grid(grid['tiles'], self.canvas.grid_width) if 'compressed' in grid else grid['tiles']
 
         self.messages = []
 
-        for player in sorted(lobby['players'], key=lambda x: x['role']):
+        for player in sorted(self.lobby['players'], key=lambda x: x['role']):
             if player['role'] == PlayerRole.DRAWER.name:
-                self.messages.append(Message(self.game, '', player['name'], (10, 10), is_image=True, canvas=self.canvas))
+                self.messages.append(Message(self.game, self.lobby['word'], player['name'], (10, 10), is_image=True, canvas=self.canvas))
             else:
                 self.messages.append(Message(self.game, player['guess'], player['name'], (10, 5)))
 
-        self.messages.append(Message(self.game, lobby['word'], 'KI', (10, 5), color=Colors.pink))
+        self.messages.append(Message(self.game, self.lobby['ai_guess'] + f' ({round(self.lobby["ai_certainty"] * 100)}%)', 'KI', (10, 5), color=Colors.pink))
         
         self.animation_thread = Thread(target=self.animation)
         self.animation_thread.start()
+
+        for message in self.messages:
+            message.draw((0, 0), 0)
+            message.pos = [-message.message.width, self.game.dim[1] + 200]
 
     def linear(self: any, x: float) -> float:
         return x
     
     def regression(self: any, x: float) -> float:
-        slope = 8
-        return 1 - 1 / (1 + slope * x)
+        slope = 4
+        return 1.2 - 1 / (1 + slope * x)
 
     def logistic(self: any, x: float) -> float:
         slope = 8
         return 1 / (1 + math.e ** (-slope * (x - 0.5)))
 
     def animation(self: any) -> None:
-        padding = self.game.dim[1] / 15
-
-        for message in self.messages:
-            message.pos = [-self.game.dim[0] / 3, self.game.dim[1] + 200]
-        
+        sleep(2) # For suspense
+        padding = self.game.dim[0] / 15
         y = 0
 
         for message in self.messages:
-            self.animate(message.pos, (0, y), 25, 50, self.regression, self.logistic, 1)
-            message.draw((0, y), 0)
-            y = message.message.y + message.message.height + padding
+            self.animate(message.pos, (0, y), 40, 50, self.regression, self.logistic, 1)
+            y += message.message.height + padding
         
         sleep(2)
 
@@ -114,11 +117,15 @@ class Chat(Page):
     def animate(self: any, pos: list[float], end: tuple[float], x_steps: int, y_steps: int, x_func: callable, y_func: callable, time: float) -> None:
         start = tuple(pos)
         steps = max(x_steps, y_steps)
+        goal_scroll = min(self.chat_scroll, self.game.dim[1] * 0.8 - end[1])
+        start_scroll = self.chat_scroll
         # TODO: dynamic animation speed, adapt chat scroll height
 
         for i in range(steps):
             x = start[0] + (end[0] - start[0]) * x_func(min(i, x_steps) / x_steps)
-            y = start[1] + (end[1] - start[1]) * y_func(min(i, y_steps) / y_steps)
+            y_factor = y_func(min(i, y_steps) / y_steps)
+            y = start[1] + (end[1] - start[1]) * y_factor
+            self.chat_scroll = start_scroll + (goal_scroll - start_scroll) * y_factor
             pos[0] = x
             pos[1] = y
             self.trigger_update()
@@ -175,8 +182,7 @@ class Chat(Page):
         
         if self.animation_done:
             if event.type == pygame.MOUSEWHEEL:
-                self.chat_scroll += event.y * 5
-                self.chat_scroll = min(0, self.chat_scroll)
+                self.chat_scroll = max(min(0, self.chat_scroll + event.y * 10), -self.messages[-1].pos[1])
                 self.trigger_update()
         
         if event.type == pygame.VIDEORESIZE and self.continue_btn is not None:

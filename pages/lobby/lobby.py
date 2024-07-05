@@ -20,6 +20,7 @@ class Lobby(Page):
         self.enter_btn_hover = EventBool(self.trigger_update)
         self.cancel_btn = None
         self.enter_btn = None
+        self.is_connected = False
     
     def draw(self:any)->None:
         self.game.screen.fill(Colors.beige)
@@ -42,6 +43,7 @@ class Lobby(Page):
 
         if 'mode' in self.game.client.info and self.game.client.info['mode'] == 'lobby':
             self.was_connected = True
+            self.is_connected = True
             player = self.game.client.info['lobby']['players'][self.game.client.info['id']]
             
             if self.game.client.info['lobby']['state'] == LobbyState.WAITING.name:
@@ -79,12 +81,14 @@ class Lobby(Page):
                     self.game.goto_page('Guess')
             elif self.game.client.info['lobby']['state'] in [LobbyState.STOPPED.name, LobbyState.DISCONNECTED.name]:
                 center_info = 'Verbindung verloren'
+                self.is_connected = False
         elif self.was_connected:
             self.game.client.disconnect()
             self.game.return_info = 'Verbindung verloren'
             self.game.goto_page('Menu')
         else:
             center_info = 'Suche Spiel...'
+            self.is_connected = False
         
         if center_info is not None:
             info_text = self.game.text_surface(center_info, 'Arial', title_fs / 1.5, Colors.purple)
@@ -156,9 +160,9 @@ class Lobby(Page):
             self.rotate_bg *= -1
             self.trigger_update()
         
-        can_exit = (self.game.client is None or self.game.client.info is None or 'lobby' not in self.game.client.info or self.game.client.info['lobby']['state'] == LobbyState.WAITING.name)
+        can_exit = (self.game.client is None or self.game.client.info is None or 'lobby' not in self.game.client.info or self.game.client.info['lobby']['state'] == LobbyState.WAITING.name) or not self.is_connected
 
-        if ((self.back_button_hover.state and not self.choosing_name) or self.cancel_btn_hover.state) and event.type == pygame.MOUSEBUTTONDOWN and can_exit:
+        if ((self.back_button_hover.state and (not self.choosing_name or not self.is_connected)) or self.cancel_btn_hover.state) and event.type == pygame.MOUSEBUTTONDOWN and can_exit:
             self.game.client.disconnect()
             self.game.goto_page('Menu')
         
