@@ -85,7 +85,8 @@ class Lobby:
                 if len(self.players) >= self.min_players:
                     self.countdown -= 1
 
-                    if len(self.players) == self.max_players and self.countdown > 10:
+                    if len(self.players
+                           ) == self.max_players and self.countdown > 10:
                         self.countdown = self.min_lobby_wait_time
 
                     if self.countdown == 0:
@@ -278,21 +279,36 @@ class Player:
                 packet['mode'] = 'lobby'
                 packet['id'] = self.id
                 packet['lobby'] = {
-                    'id': self.lobby.id,
-                    'draw_time': self.lobby.draw_time,
-                    'lobby_wait_time': self.lobby.lobby_wait_time,
-                    'min_lobby_wait_time': self.lobby.min_lobby_wait_time,
-                    'words': self.lobby.words,
-                    'word': self.lobby.word,
-                    'choose_word_time': self.lobby.choose_word_time,
-                    'min_players': self.lobby.min_players,
-                    'max_players': self.lobby.max_players,
-                    'countdown': self.lobby.countdown,
-                    'state': self.lobby.state.name,
-                    'grid': self.lobby.grid,
-                    'ai_guess': self.lobby.ai_guess,
-                    'ai_certainty': self.lobby.ai_certainty,
-                    'winner': self.lobby.winner,
+                    'id':
+                    self.lobby.id,
+                    'draw_time':
+                    self.lobby.draw_time,
+                    'lobby_wait_time':
+                    self.lobby.lobby_wait_time,
+                    'min_lobby_wait_time':
+                    self.lobby.min_lobby_wait_time,
+                    'words':
+                    self.lobby.words,
+                    'word':
+                    self.lobby.word,
+                    'choose_word_time':
+                    self.lobby.choose_word_time,
+                    'min_players':
+                    self.lobby.min_players,
+                    'max_players':
+                    self.lobby.max_players,
+                    'countdown':
+                    self.lobby.countdown,
+                    'state':
+                    self.lobby.state.name,
+                    'grid':
+                    self.lobby.grid,
+                    'ai_guess':
+                    self.lobby.ai_guess,
+                    'ai_certainty':
+                    self.lobby.ai_certainty,
+                    'winner':
+                    self.lobby.winner,
                     'players': [{
                         'name': player.name,
                         'id': player.id,
@@ -332,10 +348,13 @@ class Player:
                         self.has_guessed = reply['has_guessed']
 
                         if self.role is PlayerRole.DRAWER:
-                            self.lobby.grid = reply['grid'] if 'grid' in reply else None
+                            self.lobby.grid = reply[
+                                'grid'] if 'grid' in reply else None
 
-                            if self.lobby.word is None and 'word_index' in reply and reply['word_index'] is not None:
-                                self.lobby.word = self.lobby.words[reply['word_index']]
+                            if self.lobby.word is None and 'word_index' in reply and reply[
+                                    'word_index'] is not None:
+                                self.lobby.word = self.lobby.words[
+                                    reply['word_index']]
                     else:
                         if self.log is not None:
                             self.log.info(
