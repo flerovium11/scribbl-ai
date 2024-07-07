@@ -1,6 +1,7 @@
 import os
 import sys
 import numpy as np
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'  # nopep8
 import keras
 import matplotlib.pyplot as plt
 from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D
@@ -8,12 +9,14 @@ from keras.models import Sequential
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
 
+
 def update_progress(progress):
-    barLength = 20 # Modify this to change the length of the progress bar
+    barLength = 20  # Modify this to change the length of the progress bar
     block = int(round(barLength*progress))
     bar = "#"*block + "-"*(barLength-block)
     text = f"\rLoading image data: [{bar}] {round(progress * 100, 2)}%"
     sys.stdout.write(text)
+
 
 def load_data(directory):
     """
@@ -25,36 +28,42 @@ def load_data(directory):
     samples_max_length = 10_000
 
     for i, filename in enumerate(filenames):
-        images = np.load(os.path.join(directory, filename))[:samples_max_length]
+        images = np.load(os.path.join(directory, filename))[
+            :samples_max_length]
         labels.extend([i] * len(images))
         data.extend(images)
         update_progress(i / (len(filenames) - 1))
-    
+
     print(f'\nSuccessfully read {len(filenames)} files')
-    
+
     return np.array(data), np.array(labels)
+
 
 def preprocess_data(data, labels, slice_train_base=120000, test_size=0.1):
     """
     Preprocess the data: scale images, shuffle, and split into training and testing sets.
     """
     data_length = len(data)
-    print(f'Preprocessing {data_length} chunks of image data, this might take a while...')
+    print(
+        f'Preprocessing {data_length} chunks of image data, this might take a while...')
     data = data.astype('float32') / 255.
     indices = np.random.permutation(len(data))
     data, labels = data[indices], labels[indices]
     slice_train = slice_train_base // len(np.unique(labels))
     data, labels = data[:slice_train], labels[:slice_train]
-    x_train, x_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=42)
+    x_train, x_test, y_train, y_test = train_test_split(
+        data, labels, test_size=test_size, random_state=42)
     print(f'Preprocessed {data_length} chunks of image data')
     return x_train, x_test, y_train, y_test
+
 
 def build_model(input_shape, num_classes):
     """
     Build the CNN model.
     """
     model = Sequential([
-        Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=input_shape),
+        Conv2D(32, kernel_size=(3, 3), activation='relu',
+               input_shape=input_shape),
         Conv2D(64, (3, 3), activation='relu'),
         MaxPooling2D(pool_size=(2, 2)),
         Dropout(0.25),
@@ -64,6 +73,7 @@ def build_model(input_shape, num_classes):
         Dense(num_classes, activation='softmax')
     ])
     return model
+
 
 def plot_curves(history):
     """
@@ -87,11 +97,13 @@ def plot_curves(history):
 
     plt.show()
 
+
 epochs = []
 accuracies = []
 val_accuracies = []
 losses = []
 val_losses = []
+
 
 def update_plots(epoch, log):
     epochs.append(epoch)
@@ -120,6 +132,7 @@ def update_plots(epoch, log):
 
     plt.pause(0.01)  # Pause to update the plots
 
+
 def main():
     # Parameters
     batch_size = 512
@@ -132,7 +145,8 @@ def main():
     data, labels = load_data(mypath)
 
     # Preprocess data
-    x_train, x_test, y_train, y_test = preprocess_data(data, labels, slice_train_base=slice_train_base)
+    x_train, x_test, y_train, y_test = preprocess_data(
+        data, labels, slice_train_base=slice_train_base)
 
     # Reshape input data
     input_shape = (img_rows, img_cols, 1)
@@ -158,7 +172,7 @@ def main():
                         epochs=epochs,
                         verbose=1,
                         validation_data=(x_test, y_test))
-                        # callbacks=[keras.callbacks.LambdaCallback(on_epoch_end=lambda epoch, logs: update_plots(epoch, logs))])
+    # callbacks=[keras.callbacks.LambdaCallback(on_epoch_end=lambda epoch, logs: update_plots(epoch, logs))])
 
     # Plot training curves
     plot_curves(history)
@@ -170,6 +184,7 @@ def main():
     score = model.evaluate(x_test, y_test, verbose=0)
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
+
 
 if __name__ == "__main__":
     main()
