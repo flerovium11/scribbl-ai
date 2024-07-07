@@ -6,6 +6,7 @@ from utils.eventbool import EventBool
 from utils.canvas import Canvas
 from utils.input import Input
 from external.definitions import LobbyState, PlayerRole, decompress_grid
+# format with autopep8, remove server debug print statement and improve guess and draw page ui
 
 
 class Guess(Page):
